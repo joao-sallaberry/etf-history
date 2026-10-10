@@ -1,0 +1,12 @@
+[Unit]
+Description=etf-history: daily holdings download
+
+[Timer]
+# Dimensional publishes a day's file one or two days later; two runs a day keep the lag short.
+OnCalendar=*-*-* 09:00:00 America/Sao_Paulo
+OnCalendar=*-*-* 21:00:00 America/Sao_Paulo
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

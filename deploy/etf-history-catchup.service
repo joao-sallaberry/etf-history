@@ -1,0 +1,9 @@
+[Unit]
+Description=etf-history: download missing daily holdings
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/code/etf-history
+ExecStart=%h/.local/bin/uv run --frozen etf-history catch-up
