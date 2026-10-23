@@ -1,10 +1,12 @@
 # etf-history
 
-Daily holdings history of the **DFEV** ETF (Dimensional Emerging Markets Value) since its inception in April
-2022, with dashboards to analyze its Brazilian companies (every class and ADR of a company grouped together): share
+Daily holdings history of two emerging-markets value ETFs — **DFEV** (Dimensional, since its inception in April
+2022) and **AVES** (Avantis, collected daily from 2026-10-22) — with dashboards to analyze their Brazilian companies (every class and ADR of a company grouped together): share
 count evolution, changes between two dates, composition and per-company details.
 
-Source: Dimensional's public daily files (`tools-blob.dimensional.com/etf/YYYYMMDD/DFEV.csv`).
+Sources: Dimensional's public daily files (`tools-blob.dimensional.com/etf/YYYYMMDD/DFEV.csv`) and Avantis's
+fund data API (`avantisinvestors.com/fund/808/fundData?type=holdings`). Avantis only publishes the latest day, so
+AVES history exists only from the day collection started: keep the daily job running.
 
 ## Running
 
@@ -48,7 +50,8 @@ and `ExecStart` otherwise. To move the downloaded history to another machine, co
 
 - SQLite database at `data/etf.db` (~20 MB), Brazilian holdings only: `snapshot` (one row per downloaded day),
   `holding` (one row per position), `missing_day` (holidays without a file), `meta`.
-- Original files with every holding, compressed, in `data/raw/daily/DFEV/YYYY/` (~135 MB).
+- Original files with every holding, compressed, in `data/raw/daily/<FUND>/YYYY/` (DFEV ~135 MB; AVES ~100 KB
+  per day).
 - `seeds/securities.csv` (ADRs of Brazilian companies and their share ratios) and `seeds/company_aliases.csv`
   (companies whose B3 code changed). A new Brazilian ADR in the fund must be added to `securities.csv`.
 - Details and data pitfalls: `CLAUDE.md`.
@@ -59,5 +62,5 @@ The code is licensed under the [GNU AGPL v3.0 or later](LICENSE). If you modify 
 network service (e.g. a public dashboard), you must make the source code of your modifications available to its
 users.
 
-The license covers the code, not the data. Holdings data belongs to Dimensional Fund Advisors and is subject to
-their terms of use. The files in `tests/fixtures/` are small excerpts used only for testing.
+The license covers the code, not the data. Holdings data belongs to Dimensional Fund Advisors and Avantis
+Investors (American Century) and is subject to their terms of use. The files in `tests/fixtures/` are small excerpts used only for testing.

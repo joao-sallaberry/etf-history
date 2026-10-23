@@ -38,5 +38,5 @@ def load() -> Settings:
         db_path=Path(env.get("ETF_HISTORY_DB", data_dir / "etf.db")).expanduser(),
         data_dir=data_dir,
         seeds_dir=Path(env.get("ETF_HISTORY_SEEDS_DIR", REPO_ROOT / "seeds")).expanduser(),
-        funds=tuple(f.strip().upper() for f in env.get("ETF_HISTORY_FUNDS", "DFEV").split(",") if f.strip()),
+        funds=tuple(f.strip().upper() for f in env.get("ETF_HISTORY_FUNDS", "DFEV,AVES").split(",") if f.strip()),
     )

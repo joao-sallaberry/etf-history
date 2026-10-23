@@ -1,9 +1,9 @@
 # etf-history
 
-Daily holdings history of Dimensional ETFs (for now only **DFEV**, Dimensional Emerging Markets Value ETF), with
-Streamlit dashboards of its Brazilian companies. Only Brazilian holdings go into the database; the raw files keep
-everything. Collection and storage in Python (uv), SQLite in a single
-file. Will run on a Raspberry Pi (daily job + dashboard always on in the local network).
+Daily holdings history of emerging-markets value ETFs — **DFEV** (Dimensional Emerging Markets Value ETF) and
+**AVES** (Avantis Emerging Markets Value ETF) — with Streamlit dashboards of their Brazilian companies. Only
+Brazilian holdings go into the database; the raw files keep everything. Collection and storage in Python (uv),
+SQLite in a single file. Will run on a Raspberry Pi (daily job + dashboard always on in the local network).
 
 ## Keep docs up to date
 
@@ -22,7 +22,10 @@ src/etf_history/
   http.py               httpx with retry; 404 → None
   dates.py              today() in São Paulo time, weekdays_backwards
   tickers.py            br_ticker(isin): BRPETRACNPR6 → PETR4
-  sources/dimensional.py  URL, daily CSV parser, brazilian() filter, ingest_day, reload_raw
+  sources/__init__.py   fund → source module registry (for_fund; unlisted tickers are Dimensional)
+  sources/common.py     Result, brazilian() filter shared by every source
+  sources/dimensional.py  URL, daily CSV parser, ingest_day, reload_raw
+  sources/avantis.py    Avantis JSON API: parser, ingest_latest (latest day only), reload_raw
   dashboard/
     app.py              Streamlit: navigation, global fund/period sidebar, overview page
     data.py             queries (10 min cache), company aggregation, palette, chart styling
@@ -30,18 +33,18 @@ src/etf_history/
 seeds/
   securities.csv        ADRs of Brazilian companies and foreign BDRs: country, company, share_ratio (+ evidence)
   company_aliases.csv   issuer codes that changed (EMBR → EMBJ, ARZZ → AZZA, RRRP → BRAV, NTCO → NATU)
-tests/                  parser, refs, tickers, database load; fixtures/ with real excerpts from 2022 and 2026
+tests/                  parsers, refs, tickers, database load; fixtures/ with real excerpts (DFEV 2022/2026, AVES 2026)
 deploy/                 systemd user units: catch-up twice a day and the dashboard
-data/                   (git-ignored) etf.db, raw/daily/<FUND>/<YYYY>/<YYYYMMDD>.csv.gz, logs
+data/                   (git-ignored) etf.db, raw/daily/<FUND>/<YYYY>/<YYYYMMDD>.csv.gz (.json.gz for AVES), logs
 ```
 
 ## Commands
 
 ```sh
 uv run etf-history init                       # create the database
-uv run etf-history backfill-daily             # from yesterday back to the fund's inception; resumable
+uv run etf-history backfill-daily             # from yesterday back to the fund's inception; resumable (AVES: latest day)
 uv run etf-history backfill-daily --since 2025-01-01 --until 2025-06-30
-uv run etf-history fetch-daily [--day YYYY-MM-DD]   # one day, or the missing days of the last week
+uv run etf-history fetch-daily [--day YYYY-MM-DD]   # one day, or the missing days of the last week (no --day for AVES)
 uv run etf-history catch-up                   # daily job: every missing day
 uv run etf-history status [--gaps]            # days per fund, date range, missing days
 uv run etf-history seed                       # re-parse raw files if seeds/ changed (download commands do it too)
@@ -59,7 +62,7 @@ uv run ruff check src tests && uv run ruff format src tests
 | `ETF_HISTORY_DATA_DIR` | `<repo>/data` | database and raw files |
 | `ETF_HISTORY_DB` | `$ETF_HISTORY_DATA_DIR/etf.db` | SQLite file |
 | `ETF_HISTORY_SEEDS_DIR` | `<repo>/seeds` | seeds |
-| `ETF_HISTORY_FUNDS` | `DFEV` | funds to collect, comma-separated |
+| `ETF_HISTORY_FUNDS` | `DFEV,AVES` | funds to collect, comma-separated |
 
 ## Source: Dimensional daily CSV
 
@@ -74,6 +77,24 @@ uv run ruff check src tests && uv run ruff format src tests
   coupon_rate, maturity_date, principal`. `shares` = actual share count; `market_value` = US$; `weight` = fraction
   of the fund's net assets. The old notebook (`random-scripts/finance/dfev.ipynb`) divided `shares` by 100 for
   readability only; the database stores the real value.
+
+## Source: Avantis JSON API (AVES)
+
+- URL: `https://www.avantisinvestors.com/fund/<fundNumber>/fundData?type=holdings` (AVES = 808, `FUND_NUMBER` in
+  `sources/avantis.py`), no authentication. Returns **only the latest day** (`portfolio.etfHoldingsAsOfDate`,
+  usually the previous business day); no date parameter exists (tried `asOfDate`, `date`, `holdingsDate`). A day
+  not fetched while it is the latest one is lost, so `catch-up` must keep running. No `missing_day` rows.
+- Raw file: the whole JSON response, gzipped (~100 KB/day). `as_of` comes from `etfHoldingsAsOfDate`; a response
+  for another fund (`ticker` ≠ fund) is rejected.
+- Lines (`portfolio.etfHoldings`): `name, ticker, securityType, cusip, isin, sedol, shareQuantity, contractCount,
+  baseMarketValue, weight, coupon, maturityDate, sector, country`. `ticker` is already B3-style (PRIO3).
+  Currencies have no ISIN/SEDOL (keyed by CUSIP, e.g. `999TWDZ90`); some lines have empty value and weight.
+- `weight` is published rounded to 0.01% ("0.45%"), so the stored `weight` is `baseMarketValue / Σ
+  baseMarketValue` of the file (the published weights add to ~99.8%, against net assets). No local-currency value
+  (`value_local` NULL).
+- Fund page `avantis-investments/avantis-emerging-markets-value-etf/` embeds the same array (`etfHoldings:[…]`)
+  in its HTML; the Wayback Machine has ~30 captures of it with full holdings (2023-10 → 2026-07), none of the API.
+  Inception 2021-09-28.
 
 ## Data pitfalls
 

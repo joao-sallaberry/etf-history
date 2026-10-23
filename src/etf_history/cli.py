@@ -9,7 +9,7 @@ from typing import Annotated
 
 import typer
 
-from etf_history import config, db, http, refs
+from etf_history import config, db, http, refs, sources
 from etf_history.dates import today, weekdays_backwards
 from etf_history.sources import dimensional
 
@@ -42,7 +42,7 @@ def _refs(conn: sqlite3.Connection, settings: config.Settings) -> refs.Refs:
     if db.get_meta(conn, "seeds_sha256") != current.sha256:
         for fund in conn.execute("select distinct fund from snapshot").fetchall():
             log.info("%s: seeds changed, reloading raw files", fund[0])
-            n = dimensional.reload_raw(conn, fund=fund[0], data_dir=settings.data_dir, refs=current)
+            n = sources.for_fund(fund[0]).reload_raw(conn, fund=fund[0], data_dir=settings.data_dir, refs=current)
             log.info("%s: %d files reloaded", fund[0], n)
         db.set_meta(conn, "seeds_sha256", current.sha256)
     return current
@@ -80,6 +80,24 @@ def _backfill(conn, settings: config.Settings, refs_: refs.Refs, fund: str, sinc
     return counts
 
 
+def _latest(conn, settings: config.Settings, refs_: refs.Refs, fund: str) -> dict[str, int]:
+    """Sources without history (Avantis): load the day currently published."""
+    try:
+        with http.client() as client:
+            result = sources.avantis.ingest_latest(conn, client, fund=fund, data_dir=settings.data_dir, refs=refs_)
+    except Exception as exc:
+        log.error("%s latest: %s", fund, exc)
+        return {"error": 1}
+    log.info("%s %s: %s %s", fund, result.as_of or "latest", result.status, result.rows or "")
+    return {result.status: 1, "error": 0}
+
+
+def _collect(conn, settings: config.Settings, refs_: refs.Refs, fund: str, since: date, until: date) -> dict[str, int]:
+    if sources.for_fund(fund) is sources.avantis:
+        return _latest(conn, settings, refs_, fund)
+    return _backfill(conn, settings, refs_, fund, since, until)
+
+
 @app.command()
 def init():
     """Create the database."""
@@ -102,14 +120,16 @@ def backfill_daily(
     since: Annotated[str | None, typer.Option(help="Oldest day (YYYY-MM-DD); default: fund inception")] = None,
     until: Annotated[str | None, typer.Option(help="Newest day (YYYY-MM-DD); default: yesterday")] = None,
 ):
-    """Download daily holdings from newest to oldest, skipping days already loaded. Resumable."""
+    """Download daily holdings from newest to oldest, skipping days already loaded. Resumable.
+
+    Avantis funds have no history to download: only the latest day is loaded."""
     settings, conn = _setup()
     r = _refs(conn, settings)
     errors = 0
     for f in _funds(settings, fund):
         start = date.fromisoformat(since) if since else dimensional.FIRST_DAY.get(f, dimensional.DEFAULT_FIRST_DAY)
         end = date.fromisoformat(until) if until else today() - timedelta(days=1)
-        errors += _backfill(conn, settings, r, f, start, end)["error"]
+        errors += _collect(conn, settings, r, f, start, end)["error"]
     raise typer.Exit(1 if errors else 0)
 
 
@@ -125,7 +145,10 @@ def fetch_daily(
     r = _refs(conn, settings)
     errors = 0
     for f in _funds(settings, fund):
-        if day:
+        if day and sources.for_fund(f) is sources.avantis:
+            typer.echo(f"{f}: the source only publishes the latest day; run without --day")
+            errors += 1
+        elif day:
             d = date.fromisoformat(day)
             with http.client() as client:
                 result = dimensional.ingest_day(
@@ -133,7 +156,7 @@ def fetch_daily(
                 )
             typer.echo(f"{f} {d}: {result.status} {result.rows or ''}".rstrip())
         else:
-            errors += _backfill(conn, settings, r, f, today() - timedelta(days=7), today())["error"]
+            errors += _collect(conn, settings, r, f, today() - timedelta(days=7), today())["error"]
     raise typer.Exit(1 if errors else 0)
 
 
@@ -145,7 +168,7 @@ def catch_up(fund: FundOpt = None):
     errors = 0
     for f in _funds(settings, fund):
         start = dimensional.FIRST_DAY.get(f, dimensional.DEFAULT_FIRST_DAY)
-        errors += _backfill(conn, settings, r, f, start, today())["error"]
+        errors += _collect(conn, settings, r, f, start, today())["error"]
     raise typer.Exit(1 if errors else 0)
 
 
@@ -155,7 +178,7 @@ def reload(fund: FundOpt = None):
     settings, conn = _setup()
     r = refs.load(settings.seeds_dir)
     for f in _funds(settings, fund):
-        n = dimensional.reload_raw(conn, fund=f, data_dir=settings.data_dir, refs=r)
+        n = sources.for_fund(f).reload_raw(conn, fund=f, data_dir=settings.data_dir, refs=r)
         typer.echo(f"{f}: {n} files reloaded")
     db.set_meta(conn, "seeds_sha256", r.sha256)
 

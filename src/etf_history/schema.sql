@@ -38,7 +38,7 @@ create table if not exists holding (
     shares      real,
     value_usd   real,
     value_local real,                    -- local-currency value; NULL in older files (see CLAUDE.md)
-    weight      real,                    -- fraction of the fund's net assets
+    weight      real,                    -- fraction of the fund (DFEV: of net assets; AVES: of Σ market value)
     primary key (fund, as_of, source, key)
 ) without rowid;
 

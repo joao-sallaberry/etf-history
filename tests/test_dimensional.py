@@ -2,7 +2,7 @@ from datetime import date
 from pathlib import Path
 
 from etf_history import refs
-from etf_history.sources import dimensional
+from etf_history.sources import common, dimensional
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SEEDS = Path(__file__).parents[1] / "seeds"
@@ -66,7 +66,7 @@ def test_seeds_classify_adrs_and_local_classes():
 def test_brazilian_filter_keeps_b3_and_brazilian_adrs():
     r = refs.load(SEEDS)
     _, rows = dimensional.parse((FIXTURES / "dfev_20261008.csv").read_bytes(), r)
-    kept = {row["key"] for row in dimensional.brazilian(rows, r)}
+    kept = {row["key"] for row in common.brazilian(rows, r)}
     assert kept == {"BRPETRACNPR6", "BRSANBCDAM13", "BREMBJACNOR1", "US0594603039", "US91912E1055"}
 
 

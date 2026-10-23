@@ -1,0 +1,179 @@
+{
+ "fundData": {
+  "data": {
+   "products": [
+    {
+     "fundNumber": "808",
+     "productName": "Avantis Emerging Markets Value ETF",
+     "ticker": "AVES",
+     "navAsOfDate": "10/22/2026",
+     "portfolio": {
+      "etfHoldingsAsOfDate": "10/22/2026",
+      "etfHoldings": [
+       {
+        "name": "ASE TECHNOLOGY HOLDING  ADR ADR",
+        "ticker": "ASX",
+        "securityType": "FOREIGN ADR COMMON (DTC ELIGIBLE)",
+        "cusip": "00215W100",
+        "isin": "US00215W1009",
+        "sedol": "BFXQ991",
+        "shareQuantity": "587151",
+        "contractCount": "0",
+        "baseMarketValue": "22159078.74",
+        "weight": "1.47%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "INFORMATION TECHNOLOGY",
+        "country": "TAIWAN"
+       },
+       {
+        "name": "FUBON FINANCIAL HOLDING CO COMMON STOCK TWD10.0",
+        "ticker": "2881",
+        "securityType": "FOREIGN COMMON STOCK",
+        "cusip": "641167903",
+        "isin": "TW0002881000",
+        "sedol": "6411673",
+        "shareQuantity": "4101859",
+        "contractCount": "0",
+        "baseMarketValue": "19829232.46",
+        "weight": "1.32%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "FINANCIALS",
+        "country": "TAIWAN"
+       },
+       {
+        "name": "VALE SA SP ADR ADR",
+        "ticker": "VALE",
+        "securityType": "FOREIGN ADR COMMON (DTC ELIGIBLE)",
+        "cusip": "91912E105",
+        "isin": "US91912E1055",
+        "sedol": "2857334",
+        "shareQuantity": "741139",
+        "contractCount": "0",
+        "baseMarketValue": "9041895.80",
+        "weight": "0.60%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "MATERIALS",
+        "country": "BRAZIL"
+       },
+       {
+        "name": "PRIO SA COMMON STOCK",
+        "ticker": "PRIO3",
+        "securityType": "FOREIGN COMMON STOCK",
+        "cusip": "BYY014909",
+        "isin": "BRPRIOACNOR1",
+        "sedol": "BYY0144",
+        "shareQuantity": "471600",
+        "contractCount": "0",
+        "baseMarketValue": "6796429.98",
+        "weight": "0.45%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "ENERGY",
+        "country": "BRAZIL"
+       },
+       {
+        "name": "XP INC   CLASS A COMMON STOCK",
+        "ticker": "XP",
+        "securityType": "COMMON STOCK",
+        "cusip": "G98239109",
+        "isin": "KYG982391099",
+        "sedol": "BK4Y052",
+        "shareQuantity": "221391",
+        "contractCount": "0",
+        "baseMarketValue": "6497825.85",
+        "weight": "0.43%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "FINANCIALS",
+        "country": "BRAZIL"
+       },
+       {
+        "name": "TIM SA ADR ADR",
+        "ticker": "TIMB",
+        "securityType": "FOREIGN ADR COMMON (DTC ELIGIBLE)",
+        "cusip": "88706T108",
+        "isin": "US88706T1088",
+        "sedol": "BK531P5",
+        "shareQuantity": "108278",
+        "contractCount": "0",
+        "baseMarketValue": "2107089.88",
+        "weight": "0.14%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "COMMUNICATION SERVICES",
+        "country": "BRAZIL"
+       },
+       {
+        "name": "PETROLEO BRASILEIRO SPON ADR ADR",
+        "ticker": "PBR",
+        "securityType": "FOREIGN ADR COMMON (DTC ELIGIBLE)",
+        "cusip": "71654V408",
+        "isin": "US71654V4086",
+        "sedol": "2616580",
+        "shareQuantity": "55482",
+        "contractCount": "0",
+        "baseMarketValue": "1421448.84",
+        "weight": "0.09%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "ENERGY",
+        "country": "BRAZIL"
+       },
+       {
+        "name": "EMPREENDIMENTOS PAGUE MENOS S/ RIGHT",
+        "ticker": "PGMN1",
+        "securityType": "FOREIGN RIGHTS",
+        "cusip": "BV2C3Y906",
+        "isin": "BRPGMND05OR4",
+        "sedol": "BV2C3Y5",
+        "shareQuantity": "0",
+        "contractCount": "0",
+        "baseMarketValue": "",
+        "weight": "",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": "CONSUMER STAPLES",
+        "country": "BRAZIL"
+       },
+       {
+        "name": "NEW TAIWAN DOLLAR",
+        "ticker": "",
+        "securityType": null,
+        "cusip": "999TWDZ90",
+        "isin": "",
+        "sedol": "",
+        "shareQuantity": "436728591",
+        "contractCount": "0",
+        "baseMarketValue": "13390831.88",
+        "weight": "0.89%",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": null,
+        "country": null
+       },
+       {
+        "name": "UAE DIRHAM",
+        "ticker": "",
+        "securityType": null,
+        "cusip": "999AEDZ91",
+        "isin": "",
+        "sedol": "",
+        "shareQuantity": "-0",
+        "contractCount": "0",
+        "baseMarketValue": "",
+        "weight": "",
+        "coupon": "0",
+        "maturityDate": "",
+        "sector": null,
+        "country": null
+       }
+      ]
+     }
+    }
+   ]
+  }
+ }
+}

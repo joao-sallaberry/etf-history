@@ -10,7 +10,6 @@ import hashlib
 import io
 import logging
 import sqlite3
-from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
@@ -19,6 +18,7 @@ import httpx
 from etf_history import db, http
 from etf_history.dates import now
 from etf_history.refs import Refs
+from etf_history.sources.common import Result, brazilian
 from etf_history.tickers import br_ticker
 
 log = logging.getLogger(__name__)
@@ -93,26 +93,6 @@ def parse(data: bytes, refs: Refs | None = None) -> tuple[str, list[dict]]:
         raise ValueError("empty holdings file")
     as_of = max(dates, key=dates.get)
     return as_of, rows
-
-
-def brazilian(rows: list[dict], refs: Refs) -> list[dict]:
-    """Rows kept in the database. Warns about non-BR lines named like a Brazilian company in the same file
-    (probably an ADR missing from seeds/securities.csv)."""
-    kept = [r for r in rows if refs.is_brazilian(r["isin"])]
-    names = {r["name"] for r in kept if r["name"]}
-    for r in rows:
-        if r["isin"] and not refs.is_brazilian(r["isin"]) and r["name"] in names:
-            log.warning(
-                "possible Brazilian ADR not in seeds/securities.csv: %s %s %s", r["isin"], r["ticker"], r["name"]
-            )
-    return kept
-
-
-@dataclass
-class Result:
-    status: str  # loaded | unchanged | missing | mismatch
-    as_of: str | None = None
-    rows: int = 0
 
 
 def raw_path(raw_dir: Path, fund: str, day: date) -> Path:
