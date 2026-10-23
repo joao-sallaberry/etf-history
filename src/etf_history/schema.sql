@@ -32,7 +32,7 @@ create table if not exists holding (
     name        text,
     country     text,                    -- issuer country (BR, or the foreign issuer of a BDR; seeds/securities.csv)
     company     text,                    -- B3 issuer code (PETR) after seeds/company_aliases.csv; groups classes/ADRs
-    kind        text,                    -- share | unit | bdr | right | adr
+    kind        text,                    -- share | unit | right | adr (BDRs are not stored)
     share_ratio real,                    -- local shares per unit of this security (PBR ADR = 2); see seeds/
     sedol       text,
     shares      real,

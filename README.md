@@ -54,6 +54,8 @@ and `ExecStart` otherwise. To move the downloaded history to another machine, co
   per day).
 - `seeds/securities.csv` (ADRs of Brazilian companies and their share ratios) and `seeds/company_aliases.csv`
   (companies whose B3 code changed). A new Brazilian ADR in the fund must be added to `securities.csv`.
+- Only companies with shares on B3 are stored (plus their ADRs); BDRs of issuers listed abroad (JBS NV, XP…) are
+  not.
 - Details and data pitfalls: `CLAUDE.md`.
 
 ## License

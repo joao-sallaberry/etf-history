@@ -58,6 +58,7 @@ def test_brazilian_filter_uses_seeds():
     kept = {row["key"] for row in common.brazilian(rows, r)}
     assert {"BRPRIOACNOR1", "BRPGMND05OR4", "US91912E1055", "US71654V4086"} <= kept
     assert "KYG982391099" not in kept  # XP: listed abroad, BDR only in Brazil
+    assert "US88706T1088" in kept  # TIMB ADR of TIMS3
     assert "TW0002881000" not in kept
 
 
@@ -75,3 +76,13 @@ def test_reload_raw(tmp_path):
     assert avantis.reload_raw(conn, fund="AVES", data_dir=tmp_path, refs=refs.load(SEEDS)) == 1
     assert db.known_days(conn, "AVES") == {"2026-10-22"}
     assert conn.execute("select file_path from snapshot").fetchone()[0] == "raw/daily/AVES/2026/20261022.json.gz"
+
+
+def test_unseeded_brazilian_line_warns(caplog):
+    r = refs.load(SEEDS)
+    _, rows = avantis.parse(DATA, r)
+    common.brazilian(rows, r)
+    assert "possible Brazilian" not in caplog.text  # XP & co. are seeded as known
+    rows.append({**rows[0], "key": "KYNEW", "isin": "KYG000000000", "name": "NEW CO", "source_country": "BRAZIL"})
+    common.brazilian(rows, r)
+    assert "KYG000000000" in caplog.text

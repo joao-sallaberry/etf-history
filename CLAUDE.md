@@ -31,7 +31,8 @@ src/etf_history/
     data.py             queries (10 min cache), company aggregation, palette, chart styling
     views/              pages: evolution, changes, composition, company
 seeds/
-  securities.csv        ADRs of Brazilian companies and foreign BDRs: country, company, share_ratio (+ evidence)
+  securities.csv        ADRs of Brazilian companies, foreign BDRs and known non-stored issuers (XP…): country,
+                        company, share_ratio (+ evidence)
   company_aliases.csv   issuer codes that changed (EMBR → EMBJ, ARZZ → AZZA, RRRP → BRAV, NTCO → NATU)
 tests/                  parsers, refs, tickers, database load; fixtures/ with real excerpts (DFEV 2022/2026, AVES 2026)
 deploy/                 systemd user units: catch-up twice a day and the dashboard
@@ -105,12 +106,15 @@ uv run ruff check src tests && uv run ruff format src tests
 - **Lines without ISIN:** cash (`CASH AND CASH EQUIVALENTS`), currencies (`BRAZILIAN REAL`, key `BRL` from
   `identifier`), Indian capital gains tax accrual (`INRCGTAXE`), rights. The row key (`holding.key`) is ISIN →
   SEDOL → identifier → description, suffixed `#2` if repeated in the same file.
-- **What is stored ("Brazilian"):** every `BR…` ISIN (B3-listed, including foreign BDRs such as JBS NV) plus the
-  ADRs listed in `seeds/securities.csv` with country `BR`. The CSV has no country column, so a **new ADR of a
-  Brazilian company is dropped until it is added to the seed**; ingest logs `possible Brazilian ADR not in
-  seeds/securities.csv` when a non-BR line has the same name as a Brazilian line of the same file. After editing a
-  seed, any download command (or `etf-history seed`) notices the hash change and re-parses the raw files.
-- **Company = B3 issuer code** (ISIN chars 2:6: PETR, BBDC), so classes (PETR3/PETR4), units (SANB11), BDRs and
+- **What is stored ("Brazilian"):** companies with shares on B3 — every `BR…` ISIN **except BDRs** (`BDR` at
+  chars 6:9: JBS NV, Carrefour SA, Éxito are listed abroad and only have a receipt on B3) plus the ADRs listed in
+  `seeds/securities.csv` with country `BR` (PBR, VALE, TIMB…). Issuers listed abroad with only a BDR in Brazil
+  (XP, PAGS, STNE, INTR, AURA, Sigma) are not stored even though Avantis marks them `BRAZIL`; they are in the seed
+  with their foreign country so they don't trigger warnings. A **new ADR of a Brazilian company is dropped until
+  it is added to the seed**; ingest logs `possible Brazilian security not in seeds/securities.csv` for an unseeded
+  line named like a stored line of the same file or with Avantis `country = BRAZIL`. After editing a seed, any
+  download command (or `etf-history seed`) notices the hash change and re-parses the raw files.
+- **Company = B3 issuer code** (ISIN chars 2:6: PETR, BBDC), so classes (PETR3/PETR4), units (SANB11) and
   rights of one issuer group together; ADRs get their company from the seed. Names are not usable: they vary
   across lines ("BANCO ABC BRASIL SA - RTS").
 - **Codes change:** EMBR3 → EMBJ3 (new ISIN), Arezzo → Azzas, 3R → Brava, NTCO3 → NATU3. `company_aliases.csv`

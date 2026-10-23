@@ -18,7 +18,8 @@ class Security:
 
 @dataclass(frozen=True)
 class Refs:
-    securities: dict[str, Security] = field(default_factory=dict)  # isin -> override (ADRs, foreign BDRs)
+    # isin -> override: ADRs of Brazilian companies, foreign BDRs and foreign issuers known not to be stored
+    securities: dict[str, Security] = field(default_factory=dict)
     aliases: dict[str, str] = field(default_factory=dict)  # old issuer code -> current company code
     sha256: str = ""
 
@@ -58,11 +59,12 @@ class Refs:
         }
 
     def is_brazilian(self, isin: str | None) -> bool:
-        """Stored in the database: listed on B3 (BR ISIN, incl. foreign BDRs) or a Brazilian company's ADR."""
+        """Stored in the database: listed on B3 (BR ISIN) or an ADR of a company with shares on B3. BDRs are
+        excluded: their issuers (JBS NV, Carrefour SA, XP) are listed abroad and only have a receipt on B3."""
         if not isin:
             return False
         if isin.startswith("BR"):
-            return True
+            return isin[6:9] != "BDR"
         override = self.securities.get(isin)
         return bool(override and override.country == "BR")
 

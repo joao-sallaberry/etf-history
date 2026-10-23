@@ -22,7 +22,10 @@ def test_seeds():
     assert r.classify("BREMBRACNOR4")["company"] == "EMBJ"  # alias EMBR -> EMBJ
     assert r.classify("US29082A1079")["company"] == "EMBJ"
     assert r.classify("BRJBSSBDR002")["country"] == "NL"
-    assert r.is_brazilian("BRJBSSBDR002")
+    assert not r.is_brazilian("BRJBSSBDR002")  # BDR: issuer listed abroad
+    assert r.is_brazilian("US88706T1088")  # TIMB ADR -> TIMS
+    assert r.classify("US88706T1088")["share_ratio"] == 5
+    assert not r.is_brazilian("KYG982391099")  # XP: seeded as known, not stored
     assert r.is_brazilian("US91912E1055")
     assert not r.is_brazilian("TW0004564000")
     assert not r.is_brazilian(None)

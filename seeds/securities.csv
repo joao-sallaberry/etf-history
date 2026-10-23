@@ -7,9 +7,16 @@ US29082A1079,BR,EMBJ,4,EMBRAER SA,ERJ ADR = 4 EMBR3/EMBJ3 (price ratio 4.00)
 US3737371050,BR,GGBR,1,GERDAU SA,GGB ADR = 1 GGBR4 (price ratio 1.00)
 US71654V1017,BR,PETR,2,PETROLEO BRASILEIRO SA,PBR/A ADR = 2 PETR4 (price ratio 2.00)
 US71654V4086,BR,PETR,2,PETROLEO BRASILEIRO SA,PBR ADR = 2 PETR3 (price ratio 2.00)
+US88706T1088,BR,TIMS,5,TIM SA,TIMB ADR = 5 TIMS3 (published ratio; ADR and local share never held on the same day)
 US86959K1051,BR,SUZB,1,SUZANO SA,SUZ ADR = 1 SUZB3 (published ratio; local share never held)
 US90400P1012,BR,UGPA,1,ULTRAPAR PARTICIPACOES SA,UGP ADR = 1 UGPA3 (published ratio; local share never held)
 US91912E1055,BR,VALE,1,VALE SA,VALE ADR = 1 VALE3 (price ratio 1.00)
 BRJBSSBDR002,NL,JBSS,1,JBS NV,BDR of the Dutch holding that replaced JBS SA (JBSS3) in 2025-06
 BRCAFRBDR008,FR,CAFR,1,CARREFOUR SA,BDR of Carrefour SA (France)
 BREXCOBDR000,CO,EXCO,1,ALMACENES EXITO SA,BDR of Almacenes Éxito (Colombia)
+KYG982391099,KY,XP,1,XP INC,Listed abroad (Nasdaq) with BDR XPBR31 only; not stored. Avantis marks it BRAZIL
+KYG687071012,KY,PAGS,1,PAGSEGURO DIGITAL LTD,Listed abroad (NYSE) with BDR PAGS34 only; not stored. Avantis marks it BRAZIL
+KYG851581069,KY,STNE,1,STONECO LTD,Listed abroad (Nasdaq) with BDR STOC31 only; not stored. Avantis marks it BRAZIL
+KYG4R20B1074,KY,INTR,1,INTER & CO INC,Listed abroad (Nasdaq) with BDR INBR32 only; not stored. Avantis marks it BRAZIL
+VGG069731120,VG,AURA,1,AURA MINERALS INC,Listed abroad (Nasdaq/TSX) with BDR AURA33 only; not stored. Avantis marks it BRAZIL
+CA8265991023,CA,SGML,1,SIGMA LITHIUM CORP,Canadian; not listed on B3; not stored. Avantis marks it BRAZIL

@@ -87,6 +87,7 @@ def parse(data: bytes, refs: Refs | None = None, *, fund: str | None = None) -> 
                 "value_usd": value,
                 "value_local": None,
                 "weight": value / total if value is not None and total else None,
+                "source_country": _str(h.get("country")) or None,  # not stored; checked by brazilian()
             }
         )
     return as_of, rows
