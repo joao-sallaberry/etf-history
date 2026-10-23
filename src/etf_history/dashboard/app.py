@@ -28,6 +28,7 @@ def overview():
     value, value0 = totals.loc[last_day, "br_value_usd"], totals.loc[first_day, "br_value_usd"]
     c3.metric("Value in Brazilian companies", f"US$ {value / 1e6:,.1f}M", f"{value / value0 - 1:+.1%} {since}")
 
+    data.sources_note(totals.reset_index())
     color = data.series_colors()[0]
     left, right = st.columns(2)
     with left:
@@ -36,8 +37,9 @@ def overview():
             go.Scatter(
                 x=totals.index,
                 y=totals["br_weight"],
-                mode="lines",
+                mode="lines+markers",
                 line=dict(width=2, color=color),
+                marker=data.source_markers(totals["source"], color),
                 name="Brazil weight",
                 hovertemplate="%{y:.2%}<extra></extra>",
             )
@@ -49,9 +51,10 @@ def overview():
             go.Scatter(
                 x=totals.index,
                 y=totals["br_companies"],
-                mode="lines",
+                mode="lines+markers",
                 line_shape="hv",
                 line=dict(width=2, color=color),
+                marker=data.source_markers(totals["source"], color),
                 name="Companies",
                 hovertemplate="%{y}<extra></extra>",
             )
@@ -87,7 +90,8 @@ pages = [
     st.Page("views/changes.py", title="Changes between dates", icon=":material/compare_arrows:"),
     st.Page("views/composition.py", title="Composition", icon=":material/stacked_line_chart:"),
     st.Page("views/company.py", title="Company", icon=":material/search:"),
+    st.Page("views/compare.py", title="Compare funds", icon=":material/balance:"),
 ]
 page = st.navigation(pages)  # menu first, then the global fund/period controls below it
-if data.sidebar():
+if data.sidebar(fund_picker=page.title != "Compare funds"):
     page.run()

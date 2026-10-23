@@ -33,3 +33,4 @@ for name in [*top, "Other"]:
     )
 st.plotly_chart(data.style(fig, height=500, y_format=".0%"), width="stretch")
 st.caption("The 7 largest on the last day have their own color; the rest are summed into Other.")
+data.sources_note(df)

@@ -1,8 +1,9 @@
 # etf-history
 
 Daily holdings history of two emerging-markets value ETFs — **DFEV** (Dimensional, since its inception in April
-2022) and **AVES** (Avantis, collected daily from 2026-10-22) — with dashboards to analyze their Brazilian companies (every class and ADR of a company grouped together): share
-count evolution, changes between two dates, composition and per-company details.
+2022) and **AVES** (Avantis, collected daily from 2026-10-22, with sparser history back to 2021) — with dashboards
+to analyze their Brazilian companies (every class and ADR of a company grouped together): share count evolution,
+changes between two dates, composition, per-company details, and both funds side by side ("Compare funds").
 
 Sources: Dimensional's public daily files (`tools-blob.dimensional.com/etf/YYYYMMDD/DFEV.csv`) and Avantis's
 fund data API (`avantisinvestors.com/fund/808/fundData?type=holdings`). Avantis only publishes the latest day, so

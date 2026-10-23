@@ -35,11 +35,13 @@ for name in picked:
         x=s["as_of"],
         y=y,
         name=name,
-        mode="lines",
+        mode="lines+markers",
         line_shape="hv",
         line=dict(width=2, color=colors[name]),
+        marker=data.source_markers(s["source"], colors[name]),
         hovertemplate="%{y:,.1f}" if base100 else "%{y:,.0f}",
     )
+data.sources_note(df)
 y_title = "Index (first day = 100)" if base100 else "Shares (local equivalents)"
 st.plotly_chart(data.style(fig, height=480, y_title=y_title), width="stretch")
 

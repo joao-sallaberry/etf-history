@@ -2,6 +2,8 @@
 
 Everything is grouped by company (B3 issuer code, e.g. PETR = PETR3 + PETR4 + PBR + PBR/A). A company's share count
 is in local-share equivalents: each security's shares × share_ratio (PBR ADR = 2 PETR3), rights excluded.
+
+A day can have snapshots from several sources; queries keep one per day: daily > archive (Wayback) > nport (SEC).
 """
 
 import sqlite3
@@ -39,6 +41,20 @@ def series_colors() -> list[str]:
     return SERIES_DARK if mode() == "dark" else SERIES_LIGHT
 
 
+# Best source of each (fund, day); join holding on it to read one snapshot per day.
+BEST_SOURCE = """
+    best as (
+        select fund, as_of, source from (
+            select fund, as_of, source, row_number() over (
+                partition by fund, as_of
+                order by case source when 'daily' then 0 when 'archive' then 1 else 2 end
+            ) as n
+            from snapshot where fund = ?
+        ) where n = 1
+    )"""
+SOURCE_LABELS = {"daily": "daily file", "archive": "Wayback capture", "nport": "SEC N-PORT"}
+
+
 def _connect() -> sqlite3.Connection:
     path = config.load().db_path
     return sqlite3.connect(f"file:{path}?mode=ro", uri=True, check_same_thread=False)
@@ -46,17 +62,20 @@ def _connect() -> sqlite3.Connection:
 
 @st.cache_data(ttl=600)
 def funds() -> list[str]:
+    """Funds in the database, in ETF_HISTORY_FUNDS order (the first one is the default), others after."""
     with _connect() as conn:
-        return [r[0] for r in conn.execute("select distinct fund from snapshot order by fund")]
+        found = [r[0] for r in conn.execute("select distinct fund from snapshot order by fund")]
+    order = config.load().funds
+    return sorted(found, key=lambda f: order.index(f) if f in order else len(order))
 
 
 @st.cache_data(ttl=600)
 def holdings(fund: str) -> pd.DataFrame:
-    """Every Brazilian security line, every day."""
+    """Every Brazilian security line, every day (one source per day)."""
     with _connect() as conn:
         df = pd.read_sql_query(
-            "select as_of, isin, ticker, name, company, kind, share_ratio, shares, value_usd, value_local, weight "
-            "from holding where fund = ? and source = 'daily'",
+            f"with {BEST_SOURCE} select h.as_of, h.source, isin, ticker, name, company, kind, share_ratio, shares, "
+            "value_usd, value_local, weight from holding h join best using (fund, as_of, source)",
             conn,
             params=(fund,),
         )
@@ -78,7 +97,7 @@ def _company_labels(df: pd.DataFrame) -> dict[str, str]:
 def companies(fund: str) -> pd.DataFrame:
     """One row per (day, company): local-share equivalents, value, weight in the fund and within Brazil."""
     df = holdings(fund).sort_values("value_usd", ascending=False)
-    out = df.groupby(["as_of", "company", "company_label"], as_index=False).agg(
+    out = df.groupby(["as_of", "source", "company", "company_label"], as_index=False).agg(
         shares_eq=("shares_eq", "sum"),
         value_usd=("value_usd", "sum"),
         weight=("weight", "sum"),
@@ -92,9 +111,9 @@ def companies(fund: str) -> pd.DataFrame:
 def fund_totals(fund: str) -> pd.DataFrame:
     with _connect() as conn:
         df = pd.read_sql_query(
-            "select as_of, sum(value_usd) as br_value_usd, sum(weight) as br_weight, "
-            "count(distinct company) as br_companies from holding where fund = ? and source = 'daily' "
-            "group by as_of order by as_of",
+            f"with {BEST_SOURCE} select h.as_of, h.source, sum(value_usd) as br_value_usd, sum(weight) as br_weight, "
+            "count(distinct company) as br_companies from holding h join best using (fund, as_of, source) "
+            "group by h.as_of order by h.as_of",
             conn,
             params=(fund,),
         )
@@ -136,14 +155,19 @@ def _preset_range(name: str, first: date, last: date) -> tuple[date, date]:
     return max(first, (pd.Timestamp(last) - pd.DateOffset(**offset)).date()), last
 
 
-def sidebar() -> Selection | None:
-    """Fund and period in the sidebar, drawn by app.py before any page so they apply to every page."""
+def sidebar(*, fund_picker: bool = True) -> Selection | None:
+    """Fund and period in the sidebar, drawn by app.py before any page so they apply to every page. Without the
+    fund picker (pages comparing every fund) the period covers the days of any fund."""
     options = funds()
     if not options:
         st.warning("Empty database. Run `uv run etf-history backfill-daily`.")
         return None
-    fund = st.sidebar.selectbox("Fund", options, key="fund")
-    days = sorted(fund_totals(fund)["as_of"].dt.date)
+    if fund_picker:
+        fund = st.sidebar.selectbox("Fund", options, key="fund")
+        days = fund_days(fund)
+    else:
+        fund = st.session_state.get("fund", options[0])
+        days = sorted({d for f in options for d in fund_days(f)})
     first, last = days[0], days[-1]
     ss = st.session_state
     if "period_start" not in ss:  # first run of the session
@@ -166,13 +190,44 @@ def sidebar() -> Selection | None:
     end = max((d for d in days if d <= picked_end), default=first)
     for picked, day in ((picked_start, start), (picked_end, end)):
         if picked != day:
-            st.sidebar.caption(f"No file on {picked:%Y-%m-%d} (weekend or US holiday); using {day:%Y-%m-%d}.")
+            st.sidebar.caption(f"No snapshot on {picked:%Y-%m-%d}; using {day:%Y-%m-%d}.")
     if start > end:
         st.sidebar.warning("The start date must be before the end date.")
         return None
     selection = Selection(fund, start, end)
     st.session_state["selection"] = selection
     return selection
+
+
+def fund_days(fund: str) -> list[date]:
+    """Days with a snapshot of the fund, from any source."""
+    return sorted(fund_totals(fund)["as_of"].dt.date)
+
+
+def snap_period(days: list[date], start: date, end: date) -> tuple[date, date] | None:
+    """A fund's own days for a period: its last day up to `end`, and its last day up to `start` (else its first day
+    after `start`), so sparse histories still get two points. None when the fund has no day up to `end`."""
+    before_end = [d for d in days if d <= end]
+    if not before_end:
+        return None
+    first = max((d for d in days if d <= start), default=min(before_end))
+    return first, before_end[-1]
+
+
+def source_markers(sources: pd.Series, color: str) -> dict:
+    """Markers only on snapshots that are not daily files, so sparse history does not pass for a daily series
+    (and on a lone point, which has no line to show)."""
+    return dict(size=[0 if s == "daily" and len(sources) > 1 else 7 for s in sources], color=color)
+
+
+def sources_note(df: pd.DataFrame) -> None:
+    """Caption naming the non-daily sources shown (drawn as dots on line charts)."""
+    other = [SOURCE_LABELS[s] for s in SOURCE_LABELS if s != "daily" and (df["source"] == s).any()]
+    if other:
+        st.caption(
+            f"Includes sparse history ({', '.join(other)}): dots on line charts mark those snapshots; lines "
+            "between them are not daily data."
+        )
 
 
 def selection() -> Selection:

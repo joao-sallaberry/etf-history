@@ -27,6 +27,7 @@ c1.metric(
 )
 c2.metric("Value", f"US$ {last['value_usd'] / 1e6:,.2f}M")
 c3.metric("Weight within Brazil", f"{last['weight_br']:.2%}")
+data.sources_note(c)
 
 # Share count stacked by security, so the contribution of each class/ADR is visible.
 st.subheader("Shares by security (local equivalents)")
@@ -61,8 +62,9 @@ for title, col, fmt in [("Value (US$)", "value_usd", ",.0f"), ("Weight within Br
         go.Scatter(
             x=c["as_of"],
             y=c[col],
-            mode="lines",
+            mode="lines+markers",
             line=dict(width=2, color=color),
+            marker=data.source_markers(c["source"], color),
             name=title,
             hovertemplate=f"%{{y:{fmt}}}<extra></extra>",
         )

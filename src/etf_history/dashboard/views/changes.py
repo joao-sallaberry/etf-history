@@ -27,12 +27,14 @@ both["pct"] = (both["ratio"] - 1) * 100
 changed = both[both["shares_b"] != both["shares_a"]].sort_values("pct", ascending=False)
 
 st.subheader(f"Position changed ({len(changed)} of {len(both)} companies held on both days)")
-if not changed.empty:
+if not changed[(changed["shares_a"] > 0) & (changed["shares_b"] > 0)].empty:
     mode = data.mode()
     # Log2 of the share ratio: doubling and halving sit at the same distance from zero, so one outlier
     # (e.g. a corporate reorganization) does not flatten every other bar. Top 15 each way.
-    changed["log2"] = np.log2(changed["ratio"])
-    bars = pd.concat([changed.nsmallest(15, "log2"), changed.nlargest(15, "log2")]).drop_duplicates("company")
+    # A company held only through rights on one day has 0 shares there: no finite ratio, table only.
+    finite = changed[(changed["shares_a"] > 0) & (changed["shares_b"] > 0)].copy()
+    finite["log2"] = np.log2(finite["ratio"])
+    bars = pd.concat([finite.nsmallest(15, "log2"), finite.nlargest(15, "log2")]).drop_duplicates("company")
     bars = bars.sort_values("log2")
     span = int(np.ceil(max(1.0, bars["log2"].abs().max())))
     ticks = list(range(-span, span + 1))

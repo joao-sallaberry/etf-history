@@ -30,8 +30,8 @@ src/etf_history/
   sources/nport.py      AVES quarter-end history from SEC N-PORT filings (source 'nport')
   dashboard/
     app.py              Streamlit: navigation, global fund/period sidebar, overview page
-    data.py             queries (10 min cache), company aggregation, palette, chart styling
-    views/              pages: evolution, changes, composition, company
+    data.py             queries (10 min cache, one source per day), company aggregation, palette, chart styling
+    views/              pages: evolution, changes, composition, company, compare (every fund side by side)
 seeds/
   securities.csv        ADRs of Brazilian companies, foreign BDRs and known non-stored issuers (XP…): country,
                         company, share_ratio (+ evidence)
@@ -179,6 +179,14 @@ uv run ruff check src tests && uv run ruff format src tests
 - Dashboards: fixed 8-color categorical palette in `dashboard/data.py` (color follows the company in selection
   order, at most 8 series per chart; the rest folds into "Other"); increases/decreases in blue/red; one y axis
   per chart; hover on every chart. Dates shown as YYYY-MM-DD.
+- One snapshot per day in the dashboard: `data.BEST_SOURCE` picks daily > archive > nport; `holdings`,
+  `companies` and `fund_totals` carry a `source` column. Line charts put dots only on non-daily points
+  (`data.source_markers`) and pages call `data.sources_note(df)`, so sparse AVES history never passes for a daily
+  series.
+- "Compare funds" (`views/compare.py`) shows every fund: `app.py` calls `data.sidebar(fund_picker=False)` there,
+  so the period covers any fund's days. Each fund is read on its own snapshots (`data.snap_period`: last day up
+  to the period end; for changes, last day up to the start, else its first day), and the column headers say which
+  dates. Fund colors are palette slots in `ETF_HISTORY_FUNDS` order (also the fund picker order; first = default).
 - Dashboard fund and period are global: `data.sidebar()` draws them in `app.py` below the navigation menu, before
   the page runs; pages call `data.selection()` and filter with `sel.filter(df)`. Default period: last month;
   shortcuts (`PRESETS`: last week/month/3 months/year, all time) count back from the last day with a file and
