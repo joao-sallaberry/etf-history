@@ -1,14 +1,20 @@
 isin,country,company,share_ratio,name,note
 US0594603039,BR,BBDC,1,BANCO BRADESCO SA,BBD ADR = 1 BBDC4 (price ratio 1.00)
 US05967A1079,BR,SANB,1,BANCO SANTANDER BRASIL SA,BSBR ADR = 1 SANB11 unit (price ratio 1.00)
+US1055321053,BR,BRKM,2,BRASKEM SA,BAK ADR = 2 BRKM5 (published ratio; local share never held)
 US10554B1044,BR,AGRO,1,BRASILAGRO,LND ADR = 1 AGRO3 (price ratio 1.00)
+US20440T3005,BR,PCAR,1,CIA BRASILEIRA DE DISTRIBUICAO,CBD ADR = 1 PCAR3 (price ratio 0.94)
+US20440W1053,BR,CSNA,1,CIA SIDERURGICA NACIONAL,SID ADR = 1 CSNA3 (price ratio 1.01)
 US22113B1035,BR,CSAN,4,COSAN SA,CSAN ADR = 4 CSAN3 (published ratio; local share never held)
 US29082A1079,BR,EMBJ,4,EMBRAER SA,ERJ ADR = 4 EMBR3/EMBJ3 (price ratio 4.00)
+US37428A1034,BR,GETT,2,GETNET ADQUIRENCIA E SERVICOS,GET ADR = 2 GETT11 units (published ratio; delisted 2023; local unit never held)
 US3737371050,BR,GGBR,1,GERDAU SA,GGB ADR = 1 GGBR4 (price ratio 1.00)
+US4655621062,BR,ITUB,1,ITAU UNIBANCO HOLDING SA,ITUB ADR = 1 ITUB4 (published ratio; local share never held)
 US71654V1017,BR,PETR,2,PETROLEO BRASILEIRO SA,PBR/A ADR = 2 PETR4 (price ratio 2.00)
 US71654V4086,BR,PETR,2,PETROLEO BRASILEIRO SA,PBR ADR = 2 PETR3 (price ratio 2.00)
-US88706T1088,BR,TIMS,5,TIM SA,TIMB ADR = 5 TIMS3 (published ratio; ADR and local share never held on the same day)
+US81689T1043,BR,ASAI,5,SENDAS DISTRIBUIDORA SA,ASAI ADR = 5 ASAI3 (published ratio; local share never held)
 US86959K1051,BR,SUZB,1,SUZANO SA,SUZ ADR = 1 SUZB3 (published ratio; local share never held)
+US88706T1088,BR,TIMS,5,TIM SA,TIMB ADR = 5 TIMS3 (published ratio; ADR and local share never held on the same day)
 US90400P1012,BR,UGPA,1,ULTRAPAR PARTICIPACOES SA,UGP ADR = 1 UGPA3 (published ratio; local share never held)
 US91912E1055,BR,VALE,1,VALE SA,VALE ADR = 1 VALE3 (price ratio 1.00)
 BRJBSSBDR002,NL,JBSS,1,JBS NV,BDR of the Dutch holding that replaced JBS SA (JBSS3) in 2025-06
@@ -20,3 +26,4 @@ KYG851581069,KY,STNE,1,STONECO LTD,Listed abroad (Nasdaq) with BDR STOC31 only; 
 KYG4R20B1074,KY,INTR,1,INTER & CO INC,Listed abroad (Nasdaq) with BDR INBR32 only; not stored. Avantis marks it BRAZIL
 VGG069731120,VG,AURA,1,AURA MINERALS INC,Listed abroad (Nasdaq/TSX) with BDR AURA33 only; not stored. Avantis marks it BRAZIL
 CA8265991023,CA,SGML,1,SIGMA LITHIUM CORP,Canadian; not listed on B3; not stored. Avantis marks it BRAZIL
+KYG694511059,KY,PAX,1,PATRIA INVESTMENTS LTD,Listed abroad (Nasdaq) only; not stored. Avantis marks it BRAZIL

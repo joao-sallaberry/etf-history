@@ -2,7 +2,7 @@
 create table if not exists snapshot (
     fund        text not null,
     as_of       text not null,           -- YYYY-MM-DD, the `date` column inside the file
-    source      text not null default 'daily',
+    source      text not null default 'daily', -- daily (fund's own daily file) | archive (Wayback) | nport (SEC)
     fetched_at  text not null,           -- UTC ISO timestamp
     file_path   text,                    -- raw file, relative to the data dir
     sha256      text not null,

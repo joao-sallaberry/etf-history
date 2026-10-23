@@ -22,6 +22,14 @@ uv run etf-history dashboard          # http://localhost:8501
 
 After that, `uv run etf-history catch-up` downloads only the missing days.
 
+AVES history before daily collection (monthly-ish Wayback Machine captures of the Avantis page since 2023-10 and
+quarterly SEC N-PORT filings since 2021-11) is loaded once with:
+
+```sh
+echo 'ETF_HISTORY_SEC_USER_AGENT="Your Name you@example.com"' >> .env   # SEC requires a contact
+uv run etf-history backfill-history
+```
+
 ## Raspberry Pi
 
 Meant for Raspberry Pi OS 64-bit (aarch64); uv installs Python 3.12+ if the system one is older.
@@ -51,7 +59,7 @@ and `ExecStart` otherwise. To move the downloaded history to another machine, co
 - SQLite database at `data/etf.db` (~20 MB), Brazilian holdings only: `snapshot` (one row per downloaded day),
   `holding` (one row per position), `missing_day` (holidays without a file), `meta`.
 - Original files with every holding, compressed, in `data/raw/daily/<FUND>/YYYY/` (DFEV ~135 MB; AVES ~100 KB
-  per day).
+  per day), plus AVES history in `data/raw/archive/` and `data/raw/nport/` (~5 MB).
 - `seeds/securities.csv` (ADRs of Brazilian companies and their share ratios) and `seeds/company_aliases.csv`
   (companies whose B3 code changed). A new Brazilian ADR in the fund must be added to `securities.csv`.
 - Only companies with shares on B3 are stored (plus their ADRs); BDRs of issuers listed abroad (JBS NV, XP…) are

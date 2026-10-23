@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?><edgarSubmission xmlns="http://www.sec.gov/edgar/nport" xmlns:com="http://www.sec.gov/edgar/common" xmlns:ncom="http://www.sec.gov/edgar/nportcommon" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <headerData>
+    <submissionType>NPORT-P</submissionType>
+    <isConfidential>false</isConfidential>
+    <filerInfo>
+
+      <filer>
+        <issuerCredentials>
+          <cik>0001710607</cik>
+          <ccc>XXXXXXXX</ccc>
+        </issuerCredentials>
+      </filer>
+
+
+      <seriesClassInfo>
+        <seriesId>S000072996</seriesId>
+        <classId>C000229745</classId>
+      </seriesClassInfo>
+
+
+    </filerInfo>
+  </headerData>
+  <formData>
+    <genInfo>
+      <regName>American Century ETF Trust</regName>
+      <regFileNumber>811-23305</regFileNumber>
+      <regCik>0001710607</regCik>
+      <regLei>5493006IKK34YJD98183</regLei>
+      <regStreet1>4500 Main St</regStreet1>
+      <regCity>Kansas City</regCity>
+      <regStateConditional regCountry="US" regState="US-MO"/>
+      <regZipOrPostalCode>64111</regZipOrPostalCode>
+      <regPhone>816-531-5575</regPhone>
+      <seriesName>Avantis Emerging Markets Value ETF</seriesName>
+      <seriesId>S000072996</seriesId>
+      <seriesLei>549300W1BVGFQ4AEIV67</seriesLei>
+      <repPdEnd>2022-08-31</repPdEnd>
+      <repPdDate>2021-11-30</repPdDate>
+      <isFinalFiling>N</isFinalFiling>
+    </genInfo>
+    <fundInfo>
+      <totAssets>34992338.500000000000</totAssets>
+      <totLiabs>2028079.870000000000</totLiabs>
+      <netAssets>32964258.630000000000</netAssets>
+      <assetsAttrMiscSec>0.000000000000</assetsAttrMiscSec>
+      <assetsInvested>0.000000000000</assetsInvested>
+      <amtPayOneYrBanksBorr>0.000000000000</amtPayOneYrBanksBorr>
+      <amtPayOneYrCtrldComp>0.000000000000</amtPayOneYrCtrldComp>
+      <amtPayOneYrOthAffil>0.000000000000</amtPayOneYrOthAffil>
+      <amtPayOneYrOther>0.000000000000</amtPayOneYrOther>
+      <amtPayAftOneYrBanksBorr>0.000000000000</amtPayAftOneYrBanksBorr>
+      <amtPayAftOneYrCtrldComp>0.000000000000</amtPayAftOneYrCtrldComp>
+      <amtPayAftOneYrOthAffil>0.000000000000</amtPayAftOneYrOthAffil>
+      <amtPayAftOneYrOther>0.000000000000</amtPayAftOneYrOther>
+      <delayDeliv>0.000000000000</delayDeliv>
+      <standByCommit>0.000000000000</standByCommit>
+      <liquidPref>0.000000000000</liquidPref>
+      <cshNotRptdInCorD>425455.000000000000</cshNotRptdInCorD>
+      <isNonCashCollateral>N</isNonCashCollateral>
+      <returnInfo>
+        <monthlyTotReturns>
+          <monthlyTotReturn classId="C000229745" rtn1="0.05" rtn2="-0.008195525243" rtn3="-3.091165699116"/>
+        </monthlyTotReturns>
+        <monthlyReturnCats>
+          <equityContracts>
+            <mon1 netRealizedGain="N/A" netUnrealizedAppr="-1450.6000"/>
+            <mon2 netRealizedGain="558.8000" netUnrealizedAppr="1450.6000"/>
+            <mon3 netRealizedGain="N/A" netUnrealizedAppr="N/A"/>
+            <futureCategory>
+              <instrMon1 netRealizedGain="N/A" netUnrealizedAppr="-1450.6000"/>
+              <instrMon2 netRealizedGain="558.8000" netUnrealizedAppr="1450.6000"/>
+              <instrMon3 netRealizedGain="N/A" netUnrealizedAppr="N/A"/>
+            </futureCategory>
+            <otherCategory>
+              <instrMon1 netRealizedGain="N/A" netUnrealizedAppr="N/A"/>
+              <instrMon2 netRealizedGain="N/A" netUnrealizedAppr="N/A"/>
+              <instrMon3 netRealizedGain="N/A" netUnrealizedAppr="N/A"/>
+            </otherCategory>
+          </equityContracts>
+        </monthlyReturnCats>
+        <othMon1 netRealizedGain="0.0000" netUnrealizedAppr="-7612.2300"/>
+        <othMon2 netRealizedGain="-1456.4900" netUnrealizedAppr="-78475.1000"/>
+        <othMon3 netRealizedGain="276.9800" netUnrealizedAppr="-1019456.3900"/>
+      </returnInfo>
+      <mon1Flow redemption="0" reinvestment="0" sales="4000000"/>
+      <mon2Flow redemption="0" reinvestment="0" sales="14090740"/>
+      <mon3Flow redemption="0" reinvestment="0" sales="15900984"/>
+
+
+    </fundInfo>
+    <invstOrSecs>
+      <invstOrSec>
+        <name>Banco BMG SA</name>
+        <lei>549300IKNU8A627GPM07</lei>
+        <title>Banco BMG SA</title>
+        <cusip>N/A</cusip>
+        <identifiers>
+          <isin value="BRBMGBACNPR0"/>
+          <ticker value="BMGB4"/>
+          <other otherDesc="SEDOL" value="BF976G4"/>
+        </identifiers>
+        <balance>400.0000000000</balance>
+        <units>NS</units>
+        <currencyConditional curCd="BRL" exchangeRt="5.6218500000"/>
+        <valUSD>205.6300000000</valUSD>
+        <pctVal>0.0006237968</pctVal>
+        <payoffProfile>Long</payoffProfile>
+        <assetCat>EC</assetCat>
+        <issuerCat>CORP</issuerCat>
+        <invCountry>BR</invCountry>
+
+        <isRestrictedSec>N</isRestrictedSec>
+
+        <fairValLevel>2</fairValLevel>
+        <securityLending>
+          <isCashCollateral>N</isCashCollateral>
+          <isNonCashCollateral>N</isNonCashCollateral>
+          <isLoanByFund>N</isLoanByFund>
+        </securityLending>
+      </invstOrSec>
+      <invstOrSec>
+        <name>Petroleo Brasileiro SA</name>
+        <lei>5493000J801JZRCMFE49</lei>
+        <title>Petroleo Brasileiro SA</title>
+        <cusip>71654V101</cusip>
+        <identifiers>
+          <isin value="US71654V1017"/>
+          <ticker value="PBR/A"/>
+          <other otherDesc="SEDOL" value="2683410"/>
+        </identifiers>
+        <balance>19333.0000000000</balance>
+        <units>NS</units>
+        <curCd>USD</curCd>
+        <valUSD>200096.5500000000</valUSD>
+        <pctVal>0.6070106179</pctVal>
+        <payoffProfile>Long</payoffProfile>
+        <assetCat>EC</assetCat>
+        <issuerCat>CORP</issuerCat>
+        <invCountry>BR</invCountry>
+
+        <isRestrictedSec>N</isRestrictedSec>
+
+        <fairValLevel>1</fairValLevel>
+        <securityLending>
+          <isCashCollateral>N</isCashCollateral>
+          <isNonCashCollateral>N</isNonCashCollateral>
+          <isLoanByFund>N</isLoanByFund>
+        </securityLending>
+      </invstOrSec>
+      <invstOrSec>
+        <name>Getnet Adquirencia e Servicos para Meios de Pagamento SA</name>
+        <lei>N/A</lei>
+        <title>Getnet Adquirencia e Servicos para Meios de Pagamento SA</title>
+        <cusip>37428A103</cusip>
+        <identifiers>
+          <isin value="US37428A1034"/>
+          <ticker value="GET"/>
+          <other otherDesc="SEDOL" value="BNKBQ16"/>
+        </identifiers>
+        <balance>214.0000000000</balance>
+        <units>NS</units>
+        <curCd>USD</curCd>
+        <valUSD>278.2000000000</valUSD>
+        <pctVal>0.0008439444</pctVal>
+        <payoffProfile>Long</payoffProfile>
+        <assetCat>EC</assetCat>
+        <issuerCat>CORP</issuerCat>
+        <invCountry>BR</invCountry>
+
+        <isRestrictedSec>N</isRestrictedSec>
+
+        <fairValLevel>1</fairValLevel>
+        <securityLending>
+          <isCashCollateral>N</isCashCollateral>
+          <isNonCashCollateral>N</isNonCashCollateral>
+          <isLoanByFund>N</isLoanByFund>
+        </securityLending>
+      </invstOrSec>
+      <invstOrSec>
+        <name>Nanya Technology Corp</name>
+        <lei>254900STKVKJBRRO0835</lei>
+        <title>Nanya Technology Corp</title>
+        <cusip>N/A</cusip>
+        <identifiers>
+          <isin value="TW0002408002"/>
+          <ticker value="2408"/>
+          <other otherDesc="SEDOL" value="6283601"/>
+        </identifiers>
+        <balance>20000.0000000000</balance>
+        <units>NS</units>
+        <currencyConditional curCd="TWD" exchangeRt="27.8045000000"/>
+        <valUSD>53156.3900000000</valUSD>
+        <pctVal>0.1612546200</pctVal>
+        <payoffProfile>Long</payoffProfile>
+        <assetCat>EC</assetCat>
+        <issuerCat>CORP</issuerCat>
+        <invCountry>TW</invCountry>
+
+        <isRestrictedSec>N</isRestrictedSec>
+
+        <fairValLevel>2</fairValLevel>
+        <securityLending>
+          <isCashCollateral>N</isCashCollateral>
+          <isNonCashCollateral>N</isNonCashCollateral>
+          <isLoanByFund>N</isLoanByFund>
+        </securityLending>
+      </invstOrSec>
+    </invstOrSecs>
+    <signature>
+      <ncom:dateSigned>2022-01-24</ncom:dateSigned>
+      <ncom:nameOfApplicant>American Century ETF Trust</ncom:nameOfApplicant>
+      <ncom:signature>Amy R. Bitter</ncom:signature>
+      <ncom:signerName>Amy R. Bitter</ncom:signerName>
+      <ncom:title>Assistant Treasurer</ncom:title>
+    </signature>
+  </formData>
+  <documents>XXXX</documents>
+</edgarSubmission>

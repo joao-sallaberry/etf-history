@@ -26,6 +26,8 @@ src/etf_history/
   sources/common.py     Result, brazilian() filter shared by every source
   sources/dimensional.py  URL, daily CSV parser, ingest_day, reload_raw
   sources/avantis.py    Avantis JSON API: parser, ingest_latest (latest day only), reload_raw
+  sources/wayback.py    AVES history from Wayback captures of the fund page (source 'archive')
+  sources/nport.py      AVES quarter-end history from SEC N-PORT filings (source 'nport')
   dashboard/
     app.py              Streamlit: navigation, global fund/period sidebar, overview page
     data.py             queries (10 min cache), company aggregation, palette, chart styling
@@ -36,7 +38,8 @@ seeds/
   company_aliases.csv   issuer codes that changed (EMBR → EMBJ, ARZZ → AZZA, RRRP → BRAV, NTCO → NATU)
 tests/                  parsers, refs, tickers, database load; fixtures/ with real excerpts (DFEV 2022/2026, AVES 2026)
 deploy/                 systemd user units: catch-up twice a day and the dashboard
-data/                   (git-ignored) etf.db, raw/daily/<FUND>/<YYYY>/<YYYYMMDD>.csv.gz (.json.gz for AVES), logs
+data/                   (git-ignored) etf.db, raw/daily/<FUND>/<YYYY>/<YYYYMMDD>.csv.gz (.json.gz for AVES),
+                        raw/archive/AVES/<YYYY>/<YYYYMMDD>.json.gz, raw/nport/AVES/<YYYY>/<YYYYMMDD>_<accession>.xml.gz
 ```
 
 ## Commands
@@ -47,6 +50,7 @@ uv run etf-history backfill-daily             # from yesterday back to the fund'
 uv run etf-history backfill-daily --since 2025-01-01 --until 2025-06-30
 uv run etf-history fetch-daily [--day YYYY-MM-DD]   # one day, or the missing days of the last week (no --day for AVES)
 uv run etf-history catch-up                   # daily job: every missing day
+uv run etf-history backfill-history           # AVES past: Wayback captures + N-PORT filings; resumable (~3 min)
 uv run etf-history status [--gaps]            # days per fund, date range, missing days
 uv run etf-history seed                       # re-parse raw files if seeds/ changed (download commands do it too)
 uv run etf-history reload                     # re-parse every raw file in data/raw (after a parser change, ~30 s)
@@ -64,6 +68,7 @@ uv run ruff check src tests && uv run ruff format src tests
 | `ETF_HISTORY_DB` | `$ETF_HISTORY_DATA_DIR/etf.db` | SQLite file |
 | `ETF_HISTORY_SEEDS_DIR` | `<repo>/seeds` | seeds |
 | `ETF_HISTORY_FUNDS` | `DFEV,AVES` | funds to collect, comma-separated |
+| `ETF_HISTORY_SEC_USER_AGENT` | (empty) | `"Name email"` contact SEC requires; N-PORT download is skipped (error) without it |
 
 ## Source: Dimensional daily CSV
 
@@ -93,9 +98,31 @@ uv run ruff check src tests && uv run ruff format src tests
 - `weight` is published rounded to 0.01% ("0.45%"), so the stored `weight` is `baseMarketValue / Σ
   baseMarketValue` of the file (the published weights add to ~99.8%, against net assets). No local-currency value
   (`value_local` NULL).
-- Fund page `avantis-investments/avantis-emerging-markets-value-etf/` embeds the same array (`etfHoldings:[…]`)
-  in its HTML; the Wayback Machine has ~30 captures of it with full holdings (2023-10 → 2026-07), none of the API.
-  Inception 2021-09-28.
+- Inception 2021-09-28. History before daily collection comes from the two sources below; `snapshot.source` tells
+  them apart. Several sources may hold the same day.
+
+## Source: Wayback Machine captures of the AVES page (`archive`)
+
+- The fund page `avantis-investments/avantis-emerging-markets-value-etf/` (and its `trading-details/`) embeds the
+  full array of its day as a JS object literal (`etfHoldings:[{name:"…",…}]`, unquoted keys). The API itself was
+  never captured. 38 captures (2023-01 → 2026-07) give **28 days from 2023-10-03 to 2026-07-29**, ~1 a month.
+- Rejected (logged, retried on the next run): captures before 2023-10 (no array), the trading-details captures
+  of 2023-10/2024-08/2025-02/2025-05 (the array is **AVEM**'s, fund 118 — the array must follow `fundNumber`
+  808), and arrays cut at 1 MB by the archive (unclosed). Not a completeness test: the sum of published weights,
+  which swings between 95% and 104% on complete days (US$ cash, money market, negative cash on flows).
+- Kept arrays are stored in the API's JSON shape plus `"capture": <timestamp>`, so `avantis.parse` reads them and
+  done captures are skipped. Two captures of the same day keep the first.
+
+## Source: SEC N-PORT (`nport`)
+
+- AVES = series `S000072996` of American Century ETF Trust (CIK 1710607). Filing list: EDGAR browse-edgar atom
+  feed by series id; document: `Archives/edgar/data/1710607/<accession>/primary_doc.xml`. 19 NPORT-P filings,
+  **quarter-ends from 2021-11-30 to 2026-05-31** (fiscal quarters end Feb/May/Aug/Nov), published ~60 days later.
+- SEC blocks requests without a contact in the User-Agent ("Undeclared Automated Tool"):
+  `ETF_HISTORY_SEC_USER_AGENT` in `.env`.
+- `as_of` = `repPdDate`; per position: `identifiers/isin`, `identifiers/ticker` (B3-style), `balance` (shares when
+  `units` = NS), `valUSD`, `pctVal` (% of net assets → `weight`), `invCountry` (feeds the unseeded-security
+  warning), `currencyConditional/@exchangeRt` (→ `value_local` = valUSD × rate; NULL for US$ positions).
 
 ## Data pitfalls
 
@@ -130,11 +157,14 @@ uv run ruff check src tests && uv run ruff format src tests
 
 ## Loaded history (2026-10-10)
 
-- 1,118 days from 2022-04-26 to 2026-10-08; 84k Brazilian rows (3.16M lines in the raw files); `data/etf.db`
+- DFEV: 1,118 days from 2022-04-26 to 2026-10-08; 84k Brazilian rows (3.16M lines in the raw files); `data/etf.db`
   ~20 MB, `data/raw` ~135 MB. Re-parsing every raw file takes ~30 s.
 - Full backfill took ~16 min (~1 day/s with the 0.25 s pause).
 - The 45 weekdays without a file are all NYSE holidays (including 2025-01-09, the national day of mourning for
-  Jimmy Carter). No real gaps, so N-PORT is not needed.
+  Jimmy Carter). No real gaps, so N-PORT is not needed for DFEV.
+- AVES (2026-10-23): 19 N-PORT quarter-ends (2021-11-30 → 2026-05-31), 28 Wayback days (2023-10-03 →
+  2026-07-29), daily from 2026-10-22; 62–82 Brazilian lines per day. Unseeded Brazilian ADRs found through
+  Avantis/N-PORT country (ITUB, ASAI, SID, BAK, CBD, GET, TIMB) are now in the seed (DFEV never held them).
 - 79 Brazilian securities from 68 companies on 2026-10-08; no unseeded Brazilian ADR warnings.
 
 ## Conventions

@@ -8,8 +8,8 @@ log = logging.getLogger(__name__)
 USER_AGENT = "Mozilla/5.0 (compatible; etf-history/0.1)"
 
 
-def client(timeout: float = 60) -> httpx.Client:
-    return httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=timeout, follow_redirects=True)
+def client(timeout: float = 60, user_agent: str = USER_AGENT) -> httpx.Client:
+    return httpx.Client(headers={"User-Agent": user_agent}, timeout=timeout, follow_redirects=True)
 
 
 def fetch(http: httpx.Client, url: str, *, retries: int = 3) -> bytes | None:

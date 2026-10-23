@@ -42,7 +42,10 @@ def _refs(conn: sqlite3.Connection, settings: config.Settings) -> refs.Refs:
     if db.get_meta(conn, "seeds_sha256") != current.sha256:
         for fund in conn.execute("select distinct fund from snapshot").fetchall():
             log.info("%s: seeds changed, reloading raw files", fund[0])
-            n = sources.for_fund(fund[0]).reload_raw(conn, fund=fund[0], data_dir=settings.data_dir, refs=current)
+            n = sum(
+                m.reload_raw(conn, fund=fund[0], data_dir=settings.data_dir, refs=current)
+                for m in sources.reloaders(fund[0])
+            )
             log.info("%s: %d files reloaded", fund[0], n)
         db.set_meta(conn, "seeds_sha256", current.sha256)
     return current
@@ -172,13 +175,27 @@ def catch_up(fund: FundOpt = None):
     raise typer.Exit(1 if errors else 0)
 
 
+@app.command("backfill-history")
+def backfill_history(fund: FundOpt = None):
+    """Past snapshots of funds whose source only has the latest day (AVES): Wayback Machine captures of the fund
+    page and quarter-end SEC N-PORT filings. Resumable; rejected captures (another fund's array, cut by the
+    archive) are logged."""
+    settings, conn = _setup()
+    r = _refs(conn, settings)
+    errors = 0
+    for f in _funds(settings, fund):
+        for module in sources.HISTORY.get(f, ()):
+            errors += module.backfill(conn, fund=f, settings=settings, refs=r)["error"]
+    raise typer.Exit(1 if errors else 0)
+
+
 @app.command()
 def reload(fund: FundOpt = None):
     """Re-parse archived raw files into the database (after a parser change), without downloading."""
     settings, conn = _setup()
     r = refs.load(settings.seeds_dir)
     for f in _funds(settings, fund):
-        n = sources.for_fund(f).reload_raw(conn, fund=f, data_dir=settings.data_dir, refs=r)
+        n = sum(m.reload_raw(conn, fund=f, data_dir=settings.data_dir, refs=r) for m in sources.reloaders(f))
         typer.echo(f"{f}: {n} files reloaded")
     db.set_meta(conn, "seeds_sha256", r.sha256)
 
