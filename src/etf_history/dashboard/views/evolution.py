@@ -9,14 +9,17 @@ st.title("Share count evolution")
 st.caption(data.SHARES_HELP)
 df = sel.filter(data.companies(sel.fund))
 
+# Kept in session_state, not the widget: the options follow the period, and a widget whose options change resets.
 options = data.company_options(df)
+prev = st.session_state.get("evolution_companies")
 picked = st.multiselect(
     "Companies",
     options,
-    default=options[:5],
+    default=options[:5] if prev is None else [p for p in prev if p in options],
     max_selections=data.MAX_SERIES,
     help="Up to 8 per chart. The list starts with the largest on the last day.",
 )
+st.session_state["evolution_companies"] = picked
 base100 = st.toggle("Index to 100 (relative change from each company's first day)")
 
 if not picked:

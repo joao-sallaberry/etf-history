@@ -130,6 +130,8 @@ uv run ruff check src tests && uv run ruff format src tests
   fill both dates; editing a date by hand clears the shortcut. The period snaps to days with a
   file (start → next file day, end → previous one). "Changes between dates" compares the period's first and last
   day. Don't add per-page date pickers.
+- Page widgets whose options depend on the period (company pickers) reset when the options change, so the pick is
+  kept in a plain `st.session_state` entry (`company`, `evolution_companies`) and passed back as `index`/`default`.
 - Streamlit only hot-reloads the page scripts, not the `etf_history` modules they import (`data.py`, `db.py`…):
   restart the dashboard after changing them (`systemctl --user restart etf-history-dashboard` on the Pi),
   otherwise it fails with stale-module errors such as `has no attribute 'sidebar'`.

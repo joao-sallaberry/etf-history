@@ -6,7 +6,11 @@ from etf_history.dashboard import data
 sel = data.selection()
 
 comp = sel.filter(data.companies(sel.fund))
-label = st.selectbox("Company", data.company_options(comp))
+# Kept in session_state, not the widget: the options follow the period, and a widget whose options change resets.
+options = data.company_options(comp)
+prev = st.session_state.get("company")
+label = st.selectbox("Company", options, index=options.index(prev) if prev in options else 0)
+st.session_state["company"] = label
 c = comp[comp["company_label"] == label].sort_values("as_of")
 h = sel.filter(data.holdings(sel.fund))
 h = h[h["company_label"] == label]
