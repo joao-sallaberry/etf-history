@@ -6,4 +6,4 @@ After=network-online.target
 [Service]
 Type=oneshot
 WorkingDirectory=%h/code/etf-history
-ExecStart=%h/.local/bin/uv run --frozen etf-history catch-up
+ExecStart=%h/.local/bin/uv run --frozen --no-dev etf-history catch-up

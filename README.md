@@ -14,7 +14,7 @@ AVES history exists only from the day collection started: keep the daily job run
 Requires [uv](https://docs.astral.sh/uv/).
 
 ```sh
-uv sync
+uv sync --extra dashboard             # without the extra: collection only (e.g. on a 32-bit Raspberry Pi)
 uv run etf-history init
 uv run etf-history backfill-daily     # full history, ~20 min the first time; can be interrupted and resumed
 uv run etf-history status
@@ -33,22 +33,73 @@ uv run etf-history backfill-history
 
 ## Raspberry Pi
 
-Meant for Raspberry Pi OS 64-bit (aarch64); uv installs Python 3.12+ if the system one is older.
+Collection runs from a systemd user timer at 09:00 and 21:00 (São Paulo time). Use Raspberry Pi OS **Lite**: no
+desktop, a third of the packages, and much faster `apt upgrade` on small boards.
+
+Raspberry Pi OS Trixie images set up the first user and SSH with cloud-init (`user-data` on the boot partition);
+Raspberry Pi Imager older than 2.0 (e.g. 1.8.x from distro repositories) can neither list current images nor write
+that file. Either use a current Imager or write the `.img.xz` with `xzcat … | sudo dd of=/dev/<card>` and edit
+`user-data` (a `users:` entry with `ssh_authorized_keys`, plus `timezone:`) before the first boot.
+
+**64-bit Pi (Pi 3 or newer, Pi 2 v1.2, Zero 2 W) on Raspberry Pi OS Lite 64-bit:** collection and dashboard.
 
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
+sudo apt-get install -y git
 git clone <repo> ~/code/etf-history && cd ~/code/etf-history
-uv sync --frozen
+uv sync --frozen --no-dev --extra dashboard
 uv run etf-history init && uv run etf-history backfill-daily
+echo 'ETF_HISTORY_SEC_USER_AGENT="Your Name you@example.com"' >> .env   # SEC requires a contact
+uv run etf-history backfill-history                                      # AVES history
 
-# user services: download at 09:00 and 21:00 (São Paulo time) and an always-on dashboard
+# user services: collection timer and an always-on dashboard
 mkdir -p ~/.config/systemd/user
 cp deploy/*.service deploy/*.timer ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now etf-history-catchup.timer etf-history-dashboard.service
 sudo loginctl enable-linger "$USER"   # keep services running without an open session
+```
 
-journalctl --user -u etf-history-catchup -n 50   # log of the last download
+**32-bit Pi (Pi 1, Pi Zero/Zero W, Pi 2 v1.1) on Raspberry Pi OS Lite 32-bit:** collection only. Streamlit needs
+pyarrow, which has no 32-bit ARM wheels, so the dashboard runs on another machine on a copy of the Pi's `data/`.
+uv has an ARMv6 build and uses the system Python (3.12+). Rather than running the backfills on the Pi (slow on a
+single 700 MHz core), copy `data/` from a machine that already has the history.
+
+```sh
+# on the Pi
+curl -LsSf https://astral.sh/uv/install.sh | sh
+sudo apt-get install -y git
+git clone <repo> ~/code/etf-history && cd ~/code/etf-history
+uv sync --frozen --no-dev
+mkdir -p ~/.config/systemd/user
+cp deploy/etf-history-catchup.service deploy/etf-history-catchup.timer ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now etf-history-catchup.timer
+sudo loginctl enable-linger "$USER"
+
+# on the machine with the history: seed the Pi with it (only once; afterwards the Pi's data/ is the original)
+rsync -a data/ <user>@<pi>:code/etf-history/data/
+ssh <user>@<pi> "echo 'ETF_HISTORY_SEC_USER_AGENT=\"Your Name you@example.com\"' >> code/etf-history/.env"
+
+# on the dashboard machine: point it at the Pi's data/; `dashboard` copies it before starting. Use the Pi's
+# hostname (raspberrypi.local; Pi OS Lite announces it via mDNS) rather than its DHCP address, which can change.
+echo 'ETF_HISTORY_SYNC_FROM="<user>@raspberrypi.local:code/etf-history/data/"' >> .env
+uv run etf-history dashboard          # --no-sync to skip the copy
+```
+
+Once the Pi collects, don't run `catch-up` on the dashboard machine: the next copy overwrites its database.
+
+Updating the code on the Pi:
+
+```sh
+cd ~/code/etf-history && git pull && uv sync --frozen --no-dev    # add --extra dashboard on a 64-bit Pi
+systemctl --user daemon-reload    # only if files in deploy/ changed (copy them to ~/.config/systemd/user/ first)
+```
+
+Logs of the last downloads (Raspberry Pi OS keeps the journal in memory, so only since the last boot):
+
+```sh
+journalctl _SYSTEMD_USER_UNIT=etf-history-catchup.service -n 50
+systemctl --user list-timers      # next run
 ```
 
 The units assume the repository at `~/code/etf-history` and uv at `~/.local/bin/uv`; adjust `WorkingDirectory`

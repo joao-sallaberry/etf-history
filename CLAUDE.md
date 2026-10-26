@@ -3,7 +3,8 @@
 Daily holdings history of emerging-markets value ETFs — **DFEV** (Dimensional Emerging Markets Value ETF) and
 **AVES** (Avantis Emerging Markets Value ETF) — with Streamlit dashboards of their Brazilian companies. Only
 Brazilian holdings go into the database; the raw files keep everything. Collection and storage in Python (uv),
-SQLite in a single file. Will run on a Raspberry Pi (daily job + dashboard always on in the local network).
+SQLite in a single file. Collection runs on a Raspberry Pi 1 Model B (`raspberrypi.local`, DHCP, user `joao`, 32-bit
+ARMv6, 512 MB) with a systemd user timer; the dashboard runs elsewhere on a copy of `data/`.
 
 ## Keep docs up to date
 
@@ -45,6 +46,8 @@ data/                   (git-ignored) etf.db, raw/daily/<FUND>/<YYYY>/<YYYYMMDD>
 ## Commands
 
 ```sh
+uv sync --extra dashboard                     # pandas/plotly/streamlit are the `dashboard` extra; plain `uv sync`
+                                              # installs collection only (32-bit ARM: no pyarrow wheels)
 uv run etf-history init                       # create the database
 uv run etf-history backfill-daily             # from yesterday back to the fund's inception; resumable (AVES: latest day)
 uv run etf-history backfill-daily --since 2025-01-01 --until 2025-06-30
@@ -54,7 +57,7 @@ uv run etf-history backfill-history           # AVES past: Wayback captures + N-
 uv run etf-history status [--gaps]            # days per fund, date range, missing days
 uv run etf-history seed                       # re-parse raw files if seeds/ changed (download commands do it too)
 uv run etf-history reload                     # re-parse every raw file in data/raw (after a parser change, ~30 s)
-uv run etf-history dashboard [--port 8501]    # Streamlit on 0.0.0.0
+uv run etf-history dashboard [--port 8501]    # Streamlit on 0.0.0.0; first copies data/ from ETF_HISTORY_SYNC_FROM
 
 uv run pytest
 uv run ruff check src tests && uv run ruff format src tests
@@ -69,6 +72,7 @@ uv run ruff check src tests && uv run ruff format src tests
 | `ETF_HISTORY_SEEDS_DIR` | `<repo>/seeds` | seeds |
 | `ETF_HISTORY_FUNDS` | `DFEV,AVES` | funds to collect, comma-separated |
 | `ETF_HISTORY_SEC_USER_AGENT` | (empty) | `"Name email"` contact SEC requires; N-PORT download is skipped (error) without it |
+| `ETF_HISTORY_SYNC_FROM` | (empty) | rsync source of the collector's `data/` (`joao@raspberrypi.local:code/etf-history/data/`; the hostname, since the Pi's DHCP address can change); `dashboard` copies it first (`--no-sync` skips; a failed copy only warns) |
 
 ## Source: Dimensional daily CSV
 
@@ -195,8 +199,19 @@ uv run ruff check src tests && uv run ruff format src tests
   day. Don't add per-page date pickers.
 - Page widgets whose options depend on the period (company pickers) reset when the options change, so the pick is
   kept in a plain `st.session_state` entry (`company`, `evolution_companies`) and passed back as `index`/`default`.
+- **Dependencies:** collection code (`cli`, `db`, `sources/`…) must only use httpx, typer and the standard
+  library, so it keeps running on the Pi 1; pandas/plotly/streamlit are imported only under `dashboard/`.
+- **Raspberry Pi 1** (Raspberry Pi OS Lite 32-bit Trixie 2026-10-06, set up by a cloud-init `user-data` on the
+  boot partition: user `joao`, SSH by key only, passwordless sudo, TZ America/Sao_Paulo): repo at
+  `~/code/etf-history`, `uv sync --frozen --no-dev`, only `etf-history-catchup.timer` enabled, linger on.
+  Python startup alone takes ~15 s there. The journal is volatile (Pi OS default, spares the SD card): read logs
+  with `journalctl _SYSTEMD_USER_UNIT=etf-history-catchup.service` (`journalctl --user` finds nothing). The Pi is
+  now the collector: its `data/` is the source of truth; don't run `catch-up` elsewhere and copy over it. The
+  dashboard machine sets `ETF_HISTORY_SYNC_FROM`, so `etf-history dashboard` pulls the Pi's `data/` (rsync, no
+  `--delete`, `*-shm` excluded) before starting. Reading the Pi's SQLite over the network (sshfs/NFS) is not an
+  option: WAL readers need the writer's shared memory.
 - Streamlit only hot-reloads the page scripts, not the `etf_history` modules they import (`data.py`, `db.py`…):
-  restart the dashboard after changing them (`systemctl --user restart etf-history-dashboard` on the Pi),
+  restart the dashboard after changing them (`systemctl --user restart etf-history-dashboard` where it runs as a service),
   otherwise it fails with stale-module errors such as `has no attribute 'sidebar'`.
 - SEC N-PORT is out of scope: only if gaps show up that Dimensional does not cover. Starting point:
   `~/code/random-scripts/finance/dfev_holdings.py`.

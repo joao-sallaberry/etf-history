@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 WorkingDirectory=%h/code/etf-history
-ExecStart=%h/.local/bin/uv run --frozen etf-history dashboard --port 8501
+ExecStart=%h/.local/bin/uv run --frozen --no-dev --extra dashboard etf-history dashboard --port 8501
 Restart=on-failure
 RestartSec=10
 

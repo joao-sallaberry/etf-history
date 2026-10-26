@@ -12,6 +12,7 @@ class Settings:
     seeds_dir: Path
     funds: tuple[str, ...]
     sec_user_agent: str  # "Name email" contact SEC requires for N-PORT downloads; empty = N-PORT disabled
+    sync_from: str  # rsync source of data/ (the collector Pi) copied before the dashboard starts; empty = no sync
 
     @property
     def raw_dir(self) -> Path:
@@ -41,4 +42,5 @@ def load() -> Settings:
         seeds_dir=Path(env.get("ETF_HISTORY_SEEDS_DIR", REPO_ROOT / "seeds")).expanduser(),
         funds=tuple(f.strip().upper() for f in env.get("ETF_HISTORY_FUNDS", "DFEV,AVES").split(",") if f.strip()),
         sec_user_agent=env.get("ETF_HISTORY_SEC_USER_AGENT", ""),
+        sync_from=env.get("ETF_HISTORY_SYNC_FROM", ""),
     )

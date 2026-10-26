@@ -221,10 +221,14 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
+    { name = "typer" },
+]
+
+[package.optional-dependencies]
+dashboard = [
     { name = "pandas" },
     { name = "plotly" },
     { name = "streamlit" },
-    { name = "typer" },
 ]
 
 [package.dev-dependencies]
@@ -236,11 +240,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pandas", specifier = ">=2.3" },
-    { name = "plotly", specifier = ">=6.0" },
-    { name = "streamlit", specifier = ">=1.50" },
+    { name = "pandas", marker = "extra == 'dashboard'", specifier = ">=2.3" },
+    { name = "plotly", marker = "extra == 'dashboard'", specifier = ">=6.0" },
+    { name = "streamlit", marker = "extra == 'dashboard'", specifier = ">=1.50" },
     { name = "typer", specifier = ">=0.27.2" },
 ]
+provides-extras = ["dashboard"]
 
 [package.metadata.requires-dev]
 dev = [
