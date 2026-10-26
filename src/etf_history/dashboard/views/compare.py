@@ -62,14 +62,15 @@ for f in funds:
 st.plotly_chart(data.style(fig, height=320, y_format=".1%"), width="stretch")
 data.sources_note(pd.concat(shown))
 
-st.subheader("Weight by company")
+st.subheader("Weight within Brazil by company")
+st.caption("Each company's share of the fund's Brazilian holdings (each fund's Brazilian book adds up to 100%).")
 labels = {}
 for f in funds:  # the first fund's naming wins (Avantis names carry "COMMON STOCK" suffixes)
     for company, label in last[f]["company_label"].items():
         labels.setdefault(company, label)
 table = pd.DataFrame({"company_label": pd.Series(labels)})
 for f in funds:
-    table[f] = last[f]["weight"].reindex(table.index) * 100
+    table[f] = last[f]["weight_br"].reindex(table.index) * 100
 groups = {"All": table.index, f"In {every} ({len(both)})": list(both)}
 groups |= {f"Only {f} ({len(held[f] - both)})": list(held[f] - both) for f in funds}
 group = st.pills("Show", list(groups), default="All", key="compare_group") or "All"
@@ -86,10 +87,10 @@ st.dataframe(
     column_config={
         "company_label": "Company",
         **{
-            f: st.column_config.ProgressColumn(f"{f} weight %", format="%.3f", min_value=0, max_value=top)
+            f: st.column_config.ProgressColumn(f"{f} % of Brazil", format="%.2f", min_value=0, max_value=top)
             for f in funds
         },
-        "diff": st.column_config.NumberColumn(f"{funds[-1]} − {funds[0]} (pp)", format="%+.3f"),
+        "diff": st.column_config.NumberColumn(f"{funds[-1]} − {funds[0]} (pp)", format="%+.2f"),
     },
 )
 
