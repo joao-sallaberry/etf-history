@@ -205,12 +205,14 @@ def fund_days(fund: str) -> list[date]:
 
 
 def snap_period(days: list[date], start: date, end: date) -> tuple[date, date] | None:
-    """A fund's own days for a period: its last day up to `end`, and its last day up to `start` (else its first day
-    after `start`), so sparse histories still get two points. None when the fund has no day up to `end`."""
+    """A fund's own days for a period: its first day inside the period (changes start there, so a sparse history
+    never credits the period with a trade made before it) and its last day up to `end` (holdings). Without a day
+    inside the period both are that last day: a single snapshot, no change. None when the fund has no day up to
+    `end`."""
     before_end = [d for d in days if d <= end]
     if not before_end:
         return None
-    first = max((d for d in days if d <= start), default=min(before_end))
+    first = min((d for d in before_end if d >= start), default=before_end[-1])
     return first, before_end[-1]
 
 

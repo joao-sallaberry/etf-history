@@ -13,7 +13,7 @@ if len(funds) < 2:
     st.info("Only one fund in the database.")
     st.stop()
 
-# Each fund on its own days: its last snapshot up to the period end (and up to the start, for changes).
+# Each fund on its own days: its last snapshot up to the period end (and its first inside the period, for changes).
 periods = {f: data.snap_period(data.fund_days(f), sel.start, sel.end) for f in funds}
 missing = [f for f, p in periods.items() if p is None]
 if missing:
@@ -94,7 +94,7 @@ st.dataframe(
     },
 )
 
-# Who bought / sold: each fund between its own snapshots nearest the period start and end.
+# Who bought / sold: each fund between its own first and last snapshots inside the period.
 st.subheader("Who bought, who sold")
 changes = {}
 for f in funds:
@@ -104,7 +104,7 @@ for f in funds:
     b = df[df["as_of"].dt.date == day_b]["shares_eq"]
     changes[f] = (day_a, day_b, a, b)
     if day_a == day_b:
-        st.caption(f"{f}: a single snapshot ({day_a:%Y-%m-%d}) up to the period end; no change to show.")
+        st.caption(f"{f}: a single snapshot ({day_a:%Y-%m-%d}) in the period; no change to show.")
 
 
 def describe(a: pd.Series, b: pd.Series, company: str) -> tuple[str, int]:
@@ -142,7 +142,8 @@ for company in sorted(set().union(*(set(c[2].index) | set(c[3].index) for c in c
     rows.append(row)
 st.caption(
     "Change in local-share equivalents. Splits, reverse splits and mergers show up too. "
-    "Uses each fund's own snapshots nearest the period start and end."
+    "Uses each fund's own first and last snapshots inside the period; a sparse history can miss trades made "
+    "between the period start and its first snapshot."
 )
 if rows:
     st.dataframe(
