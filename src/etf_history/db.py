@@ -20,6 +20,20 @@ HOLDING_COLUMNS = (
 )
 
 
+# Best source of each (fund, day): daily > archive (Wayback) > nport (SEC). Join holding on it to read one
+# snapshot per day; the parameter is the fund.
+BEST_SOURCE = """
+    best as (
+        select fund, as_of, source from (
+            select fund, as_of, source, row_number() over (
+                partition by fund, as_of
+                order by case source when 'daily' then 0 when 'archive' then 1 else 2 end
+            ) as n
+            from snapshot where fund = ?
+        ) where n = 1
+    )"""
+
+
 def connect(path: Path) -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     # isolation_level=None: autocommit; transactions are explicit (`with transaction(conn)`).

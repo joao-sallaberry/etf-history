@@ -1,3 +1,4 @@
+import json
 import logging
 import sqlite3
 import subprocess
@@ -10,7 +11,8 @@ from typing import Annotated
 import typer
 
 from etf_history import config, db, http, refs, sources
-from etf_history.dates import today, weekdays_backwards
+from etf_history import notify as notify_
+from etf_history.dates import now, today, weekdays_backwards
 from etf_history.sources import dimensional
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -167,12 +169,38 @@ def fetch_daily(
 def catch_up(fund: FundOpt = None):
     """Daily job: reload seeds and download every day still missing since inception. Idempotent."""
     settings, conn = _setup()
+    # Read by `notify`: a start with no later finish means the run crashed.
+    db.set_meta(conn, "catchup_started", now().isoformat(timespec="seconds"))
     r = _refs(conn, settings)
-    errors = 0
+    failed = []
     for f in _funds(settings, fund):
         start = dimensional.FIRST_DAY.get(f, dimensional.DEFAULT_FIRST_DAY)
-        errors += _collect(conn, settings, r, f, start, today())["error"]
-    raise typer.Exit(1 if errors else 0)
+        if _collect(conn, settings, r, f, start, today())["error"]:
+            failed.append(f)
+    result = {"at": now().isoformat(timespec="seconds"), "errors": len(failed), "failed": failed}
+    db.set_meta(conn, "catchup_finished", json.dumps(result))
+    raise typer.Exit(1 if failed else 0)
+
+
+@app.command()
+def notify(
+    dry_run: Annotated[bool, typer.Option(help="Print the report instead of sending it")] = False,
+    as_of: Annotated[
+        str | None, typer.Option(help="Simulate the morning of this day (YYYY-MM-DD); implies --dry-run")
+    ] = None,
+):
+    """Morning report: what every fund bought or sold in the last 30 days, entries/exits, collection health and
+    unseeded Brazilian securities. Nothing is sent when there is nothing to report."""
+    settings, conn = _setup()
+    r = refs.load(settings.seeds_dir)
+    report = notify_.build(conn, settings, r, date.fromisoformat(as_of) if as_of else None)
+    text = notify_.render(report)
+    if dry_run or as_of:
+        typer.echo(text)
+    elif report.empty():
+        log.info("nothing to report")
+    else:
+        log.info("report:\n%s", text)
 
 
 @app.command("backfill-history")

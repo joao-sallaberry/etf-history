@@ -14,7 +14,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from etf_history import config
+from etf_history import config, db
 
 # Categorical slots in fixed order (validated palette); color follows the entity, never its rank.
 SERIES_LIGHT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
@@ -41,17 +41,7 @@ def series_colors() -> list[str]:
     return SERIES_DARK if mode() == "dark" else SERIES_LIGHT
 
 
-# Best source of each (fund, day); join holding on it to read one snapshot per day.
-BEST_SOURCE = """
-    best as (
-        select fund, as_of, source from (
-            select fund, as_of, source, row_number() over (
-                partition by fund, as_of
-                order by case source when 'daily' then 0 when 'archive' then 1 else 2 end
-            ) as n
-            from snapshot where fund = ?
-        ) where n = 1
-    )"""
+BEST_SOURCE = db.BEST_SOURCE
 SOURCE_LABELS = {"daily": "daily file", "archive": "Wayback capture", "nport": "SEC N-PORT"}
 
 

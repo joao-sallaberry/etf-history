@@ -21,7 +21,9 @@ uv run etf-history status
 uv run etf-history dashboard          # http://localhost:8501
 ```
 
-After that, `uv run etf-history catch-up` downloads only the missing days.
+After that, `uv run etf-history catch-up` downloads only the missing days, and `uv run etf-history notify
+--dry-run` prints the morning report (what both funds bought or sold in the last 30 days, entries and exits,
+collection problems).
 
 AVES history before daily collection (monthly-ish Wayback Machine captures of the Avantis page since 2023-10 and
 quarterly SEC N-PORT filings since 2021-11) is loaded once with:

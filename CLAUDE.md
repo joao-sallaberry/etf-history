@@ -18,13 +18,15 @@ src/etf_history/
   cli.py                Typer commands (`etf-history ...`)
   config.py             repo .env + environment variables → Settings
   schema.sql            SQLite schema (create if not exists; applied by every command)
-  db.py                 connection (WAL, autocommit), replace_snapshot (one day = one transaction), missing_day, meta
+  db.py                 connection (WAL, autocommit), replace_snapshot (one day = one transaction), missing_day, meta,
+                        BEST_SOURCE (one snapshot per day)
+  notify.py             morning report: joint buys/sells over 30 days, entries/exits, collection health, seeds
   refs.py               seeds → Refs: is_brazilian(isin), classify(isin) → country/company/kind/share_ratio
   http.py               httpx with retry; 404 → None
   dates.py              today() in São Paulo time, weekdays_backwards
   tickers.py            br_ticker(isin): BRPETRACNPR6 → PETR4
   sources/__init__.py   fund → source module registry (for_fund; unlisted tickers are Dimensional)
-  sources/common.py     Result, brazilian() filter shared by every source
+  sources/common.py     Result, brazilian() filter and unseeded() check shared by every source
   sources/dimensional.py  URL, daily CSV parser, ingest_day, reload_raw
   sources/avantis.py    Avantis JSON API: parser, ingest_latest (latest day only), reload_raw
   sources/wayback.py    AVES history from Wayback captures of the fund page (source 'archive')
@@ -55,6 +57,7 @@ uv run etf-history fetch-daily [--day YYYY-MM-DD]   # one day, or the missing da
 uv run etf-history catch-up                   # daily job: every missing day
 uv run etf-history backfill-history           # AVES past: Wayback captures + N-PORT filings; resumable (~3 min)
 uv run etf-history status [--gaps]            # days per fund, date range, missing days
+uv run etf-history notify [--dry-run]         # morning report (see Notifications); --as-of YYYY-MM-DD simulates a day
 uv run etf-history seed                       # re-parse raw files if seeds/ changed (download commands do it too)
 uv run etf-history reload                     # re-parse every raw file in data/raw (after a parser change, ~30 s)
 uv run etf-history dashboard [--port 8501]    # Streamlit on 0.0.0.0; first copies data/ from ETF_HISTORY_SYNC_FROM
@@ -127,6 +130,24 @@ uv run ruff check src tests && uv run ruff format src tests
 - `as_of` = `repPdDate`; per position: `identifiers/isin`, `identifiers/ticker` (B3-style), `balance` (shares when
   `units` = NS), `valUSD`, `pctVal` (% of net assets → `weight`), `invCountry` (feeds the unseeded-security
   warning), `currencyConditional/@exchangeRt` (→ `value_local` = valUSD × rate; NULL for US$ positions).
+
+## Notifications (`notify`)
+
+- One plain-text message per morning, only when there is something to report; rebuilt from the database every
+  time (no state), so an item repeats every morning while it is in the window. Items that were not in the report
+  of the day before (same rules, `as_of − 1`) get 🆕 and come first in their section.
+- Window: each fund's last 30 days, from its first day ≥ last day − 30 to its last day up to the morning (Dimensional
+  lags 1–2 days, Avantis 1). A fund with fewer than 2 days there is left out ("not enough data"); joint sections
+  need 2+ funds compared.
+- Per company, local-share equivalents (rights excluded) on the window's first vs last day: **bought** = +5% or more
+  or entry, **sold** = −5% or more or exit (`MIN_CHANGE`). "Both/All funds bought/sold": every compared fund did.
+  **Possible split or reorganization**: every fund held it on both days and all factors are within 5% of each other
+  and > 1.5 or < 0.67 (NATU ×47.6); those leave the bought/sold sections. **Entries and exits**: any fund.
+- **Collection**: a fund with more than 3 weekdays since its last day; a catch-up that started and never finished,
+  failed (`meta.catchup_finished` = `{"at", "errors", "failed"}` written by `catch-up`, `catchup_started` at its
+  start) or has not finished in 26 h. Skipped with `--as-of`.
+- **Seeds**: `sources.common.unseeded` on each fund's last raw file (the same check that logs `possible Brazilian
+  security not in seeds/securities.csv` on ingest).
 
 ## Data pitfalls
 
