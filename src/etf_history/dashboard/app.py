@@ -93,5 +93,5 @@ pages = [
     st.Page("views/compare.py", title="Compare funds", icon=":material/balance:"),
 ]
 page = st.navigation(pages)  # menu first, then the global fund/period controls below it
-if data.sidebar(fund_picker=page.title != "Compare funds"):
+if data.sidebar(fund_picker=page.title not in ("Compare funds", "Company")):
     page.run()
