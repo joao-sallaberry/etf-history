@@ -103,7 +103,9 @@ for f in funds:
     a = df[df["as_of"].dt.date == day_a]["shares_eq"]
     b = df[df["as_of"].dt.date == day_b]["shares_eq"]
     changes[f] = (day_a, day_b, a, b)
-    if day_a == day_b:
+    if day_a < sel.start:
+        st.caption(f"{f}: no snapshot inside the period (last one on {day_a:%Y-%m-%d}); no change to show.")
+    elif day_a == day_b:
         st.caption(f"{f}: a single snapshot ({day_a:%Y-%m-%d}) in the period; no change to show.")
 
 
