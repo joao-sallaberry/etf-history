@@ -35,7 +35,7 @@ uv run etf-history backfill-history
 
 ## Raspberry Pi
 
-Collection runs from a systemd user timer at 09:00 and 21:00 (São Paulo time). Use Raspberry Pi OS **Lite**: no
+Collection runs from systemd user timers at 09:00 (followed by the Telegram report) and 21:00 (São Paulo time). Use Raspberry Pi OS **Lite**: no
 desktop, a third of the packages, and much faster `apt upgrade` on small boards.
 
 Raspberry Pi OS Trixie images set up the first user and SSH with cloud-init (`user-data` on the boot partition);
@@ -58,7 +58,7 @@ uv run etf-history backfill-history                                      # AVES 
 mkdir -p ~/.config/systemd/user
 cp deploy/*.service deploy/*.timer ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable --now etf-history-catchup.timer etf-history-dashboard.service
+systemctl --user enable --now etf-history-morning.timer etf-history-catchup.timer etf-history-dashboard.service
 sudo loginctl enable-linger "$USER"   # keep services running without an open session
 ```
 
@@ -74,8 +74,8 @@ sudo apt-get install -y git
 git clone <repo> ~/code/etf-history && cd ~/code/etf-history
 uv sync --frozen --no-dev
 mkdir -p ~/.config/systemd/user
-cp deploy/etf-history-catchup.service deploy/etf-history-catchup.timer ~/.config/systemd/user/
-systemctl --user daemon-reload && systemctl --user enable --now etf-history-catchup.timer
+cp deploy/etf-history-morning.* deploy/etf-history-catchup.* ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now etf-history-morning.timer etf-history-catchup.timer
 sudo loginctl enable-linger "$USER"
 
 # on the machine with the history: seed the Pi with it (only once; afterwards the Pi's data/ is the original)
@@ -100,9 +100,25 @@ systemctl --user daemon-reload    # only if files in deploy/ changed (copy them 
 Logs of the last downloads (Raspberry Pi OS keeps the journal in memory, so only since the last boot):
 
 ```sh
-journalctl _SYSTEMD_USER_UNIT=etf-history-catchup.service -n 50
+journalctl _SYSTEMD_USER_UNIT=etf-history-morning.service -n 50   # 09:00: catch-up + report
+journalctl _SYSTEMD_USER_UNIT=etf-history-catchup.service -n 50   # 21:00
 systemctl --user list-timers      # next run
 ```
+
+## Notifications
+
+The 09:00 run sends a Telegram message when there is something to report: companies every fund bought (+5% or
+more, or a new position) or sold over its last 30 days, splits seen in every fund, entries and exits, collection
+problems and Brazilian securities missing from `seeds/securities.csv`. Items new since the previous morning are
+marked 🆕. To set it up on the collector:
+
+1. In Telegram, talk to @BotFather, `/newbot`, and copy the token.
+2. Put it in the collector's `.env` (it is a secret; don't commit it):
+   `ETF_HISTORY_TELEGRAM_TOKEN="<token>"`
+3. Send any message to your new bot, then run `uv run etf-history telegram-chat-id`: it saves the chat id in
+   `.env` and sends a test message.
+
+`uv run etf-history notify --dry-run` prints today's report; `--as-of YYYY-MM-DD` simulates another morning.
 
 The units assume the repository at `~/code/etf-history` and uv at `~/.local/bin/uv`; adjust `WorkingDirectory`
 and `ExecStart` otherwise. To move the downloaded history to another machine, copy the `data/` folder (database

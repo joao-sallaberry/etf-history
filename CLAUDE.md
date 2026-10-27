@@ -41,7 +41,7 @@ seeds/
                         company, share_ratio (+ evidence)
   company_aliases.csv   issuer codes that changed (EMBR → EMBJ, ARZZ → AZZA, RRRP → BRAV, NTCO → NATU)
 tests/                  parsers, refs, tickers, database load; fixtures/ with real excerpts (DFEV 2022/2026, AVES 2026)
-deploy/                 systemd user units: catch-up twice a day and the dashboard
+deploy/                 systemd user units: morning catch-up + notify (09:00), evening catch-up (21:00), dashboard
 data/                   (git-ignored) etf.db, raw/daily/<FUND>/<YYYY>/<YYYYMMDD>.csv.gz (.json.gz for AVES),
                         raw/archive/AVES/<YYYY>/<YYYYMMDD>.json.gz, raw/nport/AVES/<YYYY>/<YYYYMMDD>_<accession>.xml.gz
 ```
@@ -235,9 +235,9 @@ uv run ruff check src tests && uv run ruff format src tests
   library, so it keeps running on the Pi 1; pandas/plotly/streamlit are imported only under `dashboard/`.
 - **Raspberry Pi 1** (Raspberry Pi OS Lite 32-bit Trixie 2026-10-06, set up by a cloud-init `user-data` on the
   boot partition: user `joao`, SSH by key only, passwordless sudo, TZ America/Sao_Paulo): repo at
-  `~/code/etf-history`, `uv sync --frozen --no-dev`, only `etf-history-catchup.timer` enabled, linger on.
+  `~/code/etf-history`, `uv sync --frozen --no-dev`, `etf-history-morning.timer` and `etf-history-catchup.timer` enabled, linger on.
   Python startup alone takes ~15 s there. The journal is volatile (Pi OS default, spares the SD card): read logs
-  with `journalctl _SYSTEMD_USER_UNIT=etf-history-catchup.service` (`journalctl --user` finds nothing). The Pi is
+  with `journalctl _SYSTEMD_USER_UNIT=etf-history-morning.service` (or `-catchup`; `journalctl --user` finds nothing). The Pi is
   now the collector: its `data/` is the source of truth; don't run `catch-up` elsewhere and copy over it. The
   dashboard machine sets `ETF_HISTORY_SYNC_FROM`, so `etf-history dashboard` pulls the Pi's `data/` (rsync, no
   `--delete`, `*-shm` excluded) before starting. Reading the Pi's SQLite over the network (sshfs/NFS) is not an

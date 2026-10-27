@@ -1,0 +1,11 @@
+[Unit]
+Description=etf-history: download missing daily holdings, then send the morning report
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/code/etf-history
+ExecStart=%h/.local/bin/uv run --frozen --no-dev etf-history catch-up
+# ExecStopPost runs even when catch-up fails, so the report can say so.
+ExecStopPost=%h/.local/bin/uv run --frozen --no-dev etf-history notify
