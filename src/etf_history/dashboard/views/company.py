@@ -56,25 +56,38 @@ for f in held:
     c3.metric(f"{f} · Weight within Brazil", f"{last['weight_br']:.2%}")
 data.sources_note(pd.concat(c.values()))
 
-for title, col, fmt, y_format, shape in [
-    ("Shares (local equivalents)", "shares_eq", ",.0f", None, "hv"),
-    ("Value (US$)", "value_usd", ",.0f", None, "linear"),
-    ("Weight within Brazil", "weight_br", ".2%", ".1%", "linear"),
+# Shares and value as change since each fund's first day in the period, so funds of very different sizes share
+# one axis; the hover also shows the actual number.
+for title, col, fmt, relative, shape in [
+    ("Shares (local equivalents) · change in the period", "shares_eq", ",.0f", True, "hv"),
+    ("Value (US$) · change in the period", "value_usd", ",.0f", True, "linear"),
+    ("Weight within Brazil", "weight_br", ".2%", False, "linear"),
 ]:
     st.subheader(title)
     fig = go.Figure()
     for f in held:
+        y = c[f][col]
+        if relative:
+            base = y.iloc[0] or float("nan")  # a first day with only rights has no share count to compare against
+            y = y / base - 1
         fig.add_scatter(
             x=c[f]["as_of"],
-            y=c[f][col],
+            y=y,
+            customdata=c[f][col],
             name=f,
             mode="lines+markers",
             line_shape=shape,
             line=dict(width=2, color=fund_colors[f]),
             marker=data.source_markers(c[f]["source"], fund_colors[f]),
-            hovertemplate=f"%{{y:{fmt}}}",
+            hovertemplate=f"%{{y:+.1%}} (%{{customdata:{fmt}}})" if relative else f"%{{y:{fmt}}}",
         )
-    st.plotly_chart(data.style(fig, height=280, y_format=y_format), width="stretch")
+    st.plotly_chart(data.style(fig, height=280, y_format="+.0%" if relative else ".1%"), width="stretch")
+    if relative:
+        st.caption(
+            "Change since each fund's first day in the period: "
+            + ", ".join(f"{f} on {c[f]['as_of'].iloc[0]:%Y-%m-%d}" for f in held)
+            + "."
+        )
 
 # Share count stacked by security, one chart per fund, so the contribution of each class/ADR is visible.
 st.subheader("Shares by security (local equivalents)")

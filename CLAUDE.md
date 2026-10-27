@@ -191,7 +191,7 @@ uv run ruff check src tests && uv run ruff format src tests
   `data.sidebar(fund_picker=False)` there, so the period covers any fund's days. On "Compare funds" each fund is
   read on its own snapshots (`data.snap_period`: last day up to the period end; for changes, last day up to the
   start, else its first day), and the column headers say which dates. "Company" draws one line per fund over the
-  period and one "shares by security" chart per fund (ticker colors shared; Avantis writes `PBR.A`, Dimensional
+  period (shares and value as change since each fund's first day in it, actual number on hover) and one "shares by security" chart per fund (ticker colors shared; Avantis writes `PBR.A`, Dimensional
   `PBR/A`). Fund colors are palette slots in `ETF_HISTORY_FUNDS` order (also the fund picker order; first =
   default).
 - Dashboard fund and period are global: `data.sidebar()` draws them in `app.py` below the navigation menu, before
