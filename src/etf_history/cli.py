@@ -10,7 +10,7 @@ from typing import Annotated
 
 import typer
 
-from etf_history import config, db, http, refs, sources
+from etf_history import config, db, http, refs, sources, telegram
 from etf_history import notify as notify_
 from etf_history.dates import now, today, weekdays_backwards
 from etf_history.sources import dimensional
@@ -199,8 +199,40 @@ def notify(
         typer.echo(text)
     elif report.empty():
         log.info("nothing to report")
+    elif not (settings.telegram_token and settings.telegram_chat_id):
+        log.info("Telegram not configured (ETF_HISTORY_TELEGRAM_TOKEN/_CHAT_ID); report:\n%s", text)
     else:
-        log.info("report:\n%s", text)
+        try:
+            telegram.send(settings.telegram_token, settings.telegram_chat_id, text)
+        except telegram.TelegramError as exc:
+            log.error("Telegram: %s; report:\n%s", exc, text)
+            raise typer.Exit(1) from None
+        log.info("report sent to Telegram (%d lines)", text.count("\n") + 1)
+
+
+@app.command("telegram-chat-id")
+def telegram_chat_id():
+    """Find the chat that wrote to the bot (send it any message first) and save its id in .env."""
+    settings = config.load()
+    if not settings.telegram_token:
+        typer.echo("Set ETF_HISTORY_TELEGRAM_TOKEN in .env first (the token @BotFather gave you).")
+        raise typer.Exit(1)
+    try:
+        found = telegram.chats(settings.telegram_token)
+    except telegram.TelegramError as exc:
+        typer.echo(f"Telegram: {exc}")
+        raise typer.Exit(1) from None
+    if len(found) != 1:
+        listed = "; ".join(f"{i} ({name})" for i, name in found.items())
+        typer.echo(
+            f"Expected one chat, found {len(found)}{': ' + listed if found else ''}. Send the bot a message "
+            "(only from your account) and run again, or set ETF_HISTORY_TELEGRAM_CHAT_ID by hand."
+        )
+        raise typer.Exit(1)
+    chat_id, name = next(iter(found.items()))
+    config.set_dotenv("ETF_HISTORY_TELEGRAM_CHAT_ID", chat_id)
+    telegram.send(settings.telegram_token, chat_id, "etf-history: this chat will get the morning report.")
+    typer.echo(f"Chat {chat_id} ({name}) saved in .env; a test message was sent.")
 
 
 @app.command("backfill-history")

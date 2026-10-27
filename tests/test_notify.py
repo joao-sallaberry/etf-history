@@ -110,3 +110,20 @@ def test_health(conn):
     finished["errors"], finished["failed"] = 0, []
     db.set_meta(conn, "catchup_finished", json.dumps(finished))
     assert notify.health(conn, ["DFEV"], DAY, check_catchup=True) == []
+
+
+def test_telegram_chunks_split_at_lines():
+    from etf_history import telegram
+
+    text = "\n".join(f"line {i:03d}" for i in range(100))  # 8 chars + newline each
+    parts = telegram.chunks(text, limit=90)
+    assert all(len(p) <= 90 for p in parts)
+    assert "\n".join(parts) == text
+    assert telegram.chunks("x" * 25, limit=10) == ["x" * 10, "x" * 10, "x" * 5]
+
+
+def test_set_dotenv_replaces_the_key(tmp_path):
+    env = tmp_path / ".env"
+    env.write_text('A="1"\nETF_HISTORY_TELEGRAM_CHAT_ID="old"\n')
+    config.set_dotenv("ETF_HISTORY_TELEGRAM_CHAT_ID", "123", env)
+    assert env.read_text() == 'A="1"\nETF_HISTORY_TELEGRAM_CHAT_ID="123"\n'

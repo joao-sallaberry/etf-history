@@ -13,6 +13,8 @@ class Settings:
     funds: tuple[str, ...]
     sec_user_agent: str  # "Name email" contact SEC requires for N-PORT downloads; empty = N-PORT disabled
     sync_from: str  # rsync source of data/ (the collector Pi) copied before the dashboard starts; empty = no sync
+    telegram_token: str = ""  # bot token from @BotFather; empty (or no chat id) = `notify` only logs the report
+    telegram_chat_id: str = ""
 
     @property
     def raw_dir(self) -> Path:
@@ -43,4 +45,13 @@ def load() -> Settings:
         funds=tuple(f.strip().upper() for f in env.get("ETF_HISTORY_FUNDS", "DFEV,AVES").split(",") if f.strip()),
         sec_user_agent=env.get("ETF_HISTORY_SEC_USER_AGENT", ""),
         sync_from=env.get("ETF_HISTORY_SYNC_FROM", ""),
+        telegram_token=env.get("ETF_HISTORY_TELEGRAM_TOKEN", ""),
+        telegram_chat_id=env.get("ETF_HISTORY_TELEGRAM_CHAT_ID", ""),
     )
+
+
+def set_dotenv(key: str, value: str, path: Path = REPO_ROOT / ".env") -> None:
+    """Write KEY="value" into the repository's .env, replacing an existing KEY line."""
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    lines = [line for line in lines if line.split("=", 1)[0].strip() != key]
+    path.write_text("\n".join([*lines, f'{key}="{value}"']) + "\n", encoding="utf-8")

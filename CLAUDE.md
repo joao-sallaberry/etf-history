@@ -21,6 +21,7 @@ src/etf_history/
   db.py                 connection (WAL, autocommit), replace_snapshot (one day = one transaction), missing_day, meta,
                         BEST_SOURCE (one snapshot per day)
   notify.py             morning report: joint buys/sells over 30 days, entries/exits, collection health, seeds
+  telegram.py           Bot API: send (split at 4096 chars), chats (getUpdates); errors never carry the token
   refs.py               seeds → Refs: is_brazilian(isin), classify(isin) → country/company/kind/share_ratio
   http.py               httpx with retry; 404 → None
   dates.py              today() in São Paulo time, weekdays_backwards
@@ -57,7 +58,9 @@ uv run etf-history fetch-daily [--day YYYY-MM-DD]   # one day, or the missing da
 uv run etf-history catch-up                   # daily job: every missing day
 uv run etf-history backfill-history           # AVES past: Wayback captures + N-PORT filings; resumable (~3 min)
 uv run etf-history status [--gaps]            # days per fund, date range, missing days
-uv run etf-history notify [--dry-run]         # morning report (see Notifications); --as-of YYYY-MM-DD simulates a day
+uv run etf-history notify [--dry-run]         # morning report to Telegram (see Notifications); --as-of YYYY-MM-DD
+                                              # simulates a day and only prints
+uv run etf-history telegram-chat-id           # after messaging the bot: save the chat id in .env, send a test
 uv run etf-history seed                       # re-parse raw files if seeds/ changed (download commands do it too)
 uv run etf-history reload                     # re-parse every raw file in data/raw (after a parser change, ~30 s)
 uv run etf-history dashboard [--port 8501]    # Streamlit on 0.0.0.0; first copies data/ from ETF_HISTORY_SYNC_FROM
@@ -75,6 +78,8 @@ uv run ruff check src tests && uv run ruff format src tests
 | `ETF_HISTORY_SEEDS_DIR` | `<repo>/seeds` | seeds |
 | `ETF_HISTORY_FUNDS` | `DFEV,AVES` | funds to collect, comma-separated |
 | `ETF_HISTORY_SEC_USER_AGENT` | (empty) | `"Name email"` contact SEC requires; N-PORT download is skipped (error) without it |
+| `ETF_HISTORY_TELEGRAM_TOKEN` | (empty) | bot token from @BotFather (secret: only in the Pi's `.env`) |
+| `ETF_HISTORY_TELEGRAM_CHAT_ID` | (empty) | chat that gets the report (`telegram-chat-id` writes it); without token and id `notify` only logs |
 | `ETF_HISTORY_SYNC_FROM` | (empty) | rsync source of the collector's `data/` (`joao@raspberrypi.local:code/etf-history/data/`; the hostname, since the Pi's DHCP address can change); `dashboard` copies it first (`--no-sync` skips; a failed copy only warns) |
 
 ## Source: Dimensional daily CSV
@@ -133,6 +138,8 @@ uv run ruff check src tests && uv run ruff format src tests
 
 ## Notifications (`notify`)
 
+- Sent to Telegram (plain text, no markup to escape; split at 4096 characters) by the morning run on the Pi.
+  A send failure logs the report and exits 1.
 - One plain-text message per morning, only when there is something to report; rebuilt from the database every
   time (no state), so an item repeats every morning while it is in the window. Items that were not in the report
   of the day before (same rules, `as_of − 1`) get 🆕 and come first in their section.
