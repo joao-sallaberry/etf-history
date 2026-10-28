@@ -82,11 +82,18 @@ sudo loginctl enable-linger "$USER"
 rsync -a data/ <user>@<pi>:code/etf-history/data/
 ssh <user>@<pi> "echo 'ETF_HISTORY_SEC_USER_AGENT=\"Your Name you@example.com\"' >> code/etf-history/.env"
 
-# on the dashboard machine: point it at the Pi's data/; `dashboard` copies it before starting. Use the Pi's
-# hostname (raspberrypi.local; Pi OS Lite announces it via mDNS) rather than its DHCP address, which can change.
+# on the dashboard machine: point it at the Pi's data/. Use the Pi's hostname (raspberrypi.local; Pi OS Lite
+# announces it via mDNS) rather than its DHCP address, which can change.
 echo 'ETF_HISTORY_SYNC_FROM="<user>@raspberrypi.local:code/etf-history/data/"' >> .env
-uv run etf-history dashboard          # --no-sync to skip the copy
+uv run etf-history sync               # copy the Pi's data/ into this repo
+# keep it current (and backed up): the timer runs `sync` at 09:30 and 21:30, 30 min after the Pi's runs
+cp deploy/etf-history-sync.* ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now etf-history-sync.timer
+uv run etf-history dashboard          # reads the local copy
 ```
+
+The copy is also the backup of the Pi: AVES daily files can't be downloaded again, and the database can be rebuilt
+from `data/raw` with `etf-history reload`. Save the Pi's `.env` (Telegram token) yourself; `sync` doesn't copy it.
 
 Once the Pi collects, don't run `catch-up` on the dashboard machine: the next copy overwrites its database.
 

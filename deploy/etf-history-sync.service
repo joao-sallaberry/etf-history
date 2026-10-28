@@ -1,0 +1,9 @@
+[Unit]
+Description=etf-history: copy the collector Pi's data/ into this repository
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/code/etf-history
+ExecStart=%h/.local/bin/uv run --frozen --no-dev etf-history sync

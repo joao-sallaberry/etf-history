@@ -286,24 +286,27 @@ def status(gaps: Annotated[bool, typer.Option(help="List weekdays with no file")
                 typer.echo(f"  {r['day']} ({date.fromisoformat(r['day']):%a})  {r['reason']}")
 
 
-def _sync_data(source: str, data_dir: Path) -> None:
-    """Copy the collector's data/ (database + raw files) over the local one. Failure only warns: the dashboard
-    then shows the last copy."""
-    source = source.rstrip("/") + "/"
+@app.command()
+def sync():
+    """Copy data/ (database + raw files) from ETF_HISTORY_SYNC_FROM (the collector Pi) into this repository's."""
+    settings = config.load()
+    if not settings.sync_from:
+        typer.echo("ETF_HISTORY_SYNC_FROM is not set (e.g. joao@raspberrypi.local:code/etf-history/data/).", err=True)
+        raise typer.Exit(1)
+    source = settings.sync_from.rstrip("/") + "/"
     typer.echo(f"Copying data from {source} …")
     # *-shm is a shared-memory index rebuilt by SQLite; the database closes its WAL after each collection run.
-    cmd = ["rsync", "-a", "--exclude", "*-shm", "--exclude", "logs/", source, f"{data_dir}/"]
+    # No --delete: a file removed on the collector stays here.
+    cmd = ["rsync", "-a", "--exclude", "*-shm", "--exclude", "logs/", source, f"{settings.data_dir}/"]
     if subprocess.call(cmd) != 0:
-        typer.echo("Could not copy the data (collector off?); showing the last local copy.", err=True)
+        typer.echo("Could not copy the data (collector off?).", err=True)
+        raise typer.Exit(1)
 
 
 @app.command()
 def dashboard(
     port: Annotated[int, typer.Option(help="HTTP port")] = 8501,
     address: Annotated[str, typer.Option(help="Bind address")] = "0.0.0.0",
-    sync: Annotated[
-        bool, typer.Option(help="Copy data/ from ETF_HISTORY_SYNC_FROM (the collector Pi) first, when it is set")
-    ] = True,
 ):
     """Start the Streamlit dashboard (needs the `dashboard` extra: `uv sync --extra dashboard`)."""
     import importlib.util
@@ -311,9 +314,6 @@ def dashboard(
     if importlib.util.find_spec("streamlit") is None:
         typer.echo("Streamlit is not installed: run `uv sync --extra dashboard` (not available on 32-bit ARM).")
         raise typer.Exit(1)
-    settings = config.load()
-    if sync and settings.sync_from:
-        _sync_data(settings.sync_from, settings.data_dir)
     app_path = Path(__file__).parent / "dashboard" / "app.py"
     cmd = [sys.executable, "-m", "streamlit", "run", str(app_path)]
     cmd += ["--server.port", str(port), "--server.address", address, "--browser.gatherUsageStats", "false"]

@@ -41,7 +41,8 @@ seeds/
                         company, share_ratio (+ evidence)
   company_aliases.csv   issuer codes that changed (EMBR → EMBJ, ARZZ → AZZA, RRRP → BRAV, NTCO → NATU)
 tests/                  parsers, refs, tickers, database load; fixtures/ with real excerpts (DFEV 2022/2026, AVES 2026)
-deploy/                 systemd user units: morning catch-up + notify (09:00), evening catch-up (21:00), dashboard
+deploy/                 systemd user units: morning catch-up + notify (09:00), evening catch-up (21:00), dashboard,
+                        sync of the Pi's data/ (09:30/21:30, dashboard machine)
 data/                   (git-ignored) etf.db, raw/daily/<FUND>/<YYYY>/<YYYYMMDD>.csv.gz (.json.gz for AVES),
                         raw/archive/AVES/<YYYY>/<YYYYMMDD>.json.gz, raw/nport/AVES/<YYYY>/<YYYYMMDD>_<accession>.xml.gz
 ```
@@ -63,7 +64,9 @@ uv run etf-history notify [--dry-run]         # morning report to Telegram (see 
 uv run etf-history telegram-chat-id           # after messaging the bot: save the chat id in .env, send a test
 uv run etf-history seed                       # re-parse raw files if seeds/ changed (download commands do it too)
 uv run etf-history reload                     # re-parse every raw file in data/raw (after a parser change, ~30 s)
-uv run etf-history dashboard [--port 8501]    # Streamlit on 0.0.0.0; first copies data/ from ETF_HISTORY_SYNC_FROM
+uv run etf-history sync                       # copy data/ from ETF_HISTORY_SYNC_FROM (the Pi) into this repo; exit 1
+                                              # if unset or the copy failed
+uv run etf-history dashboard [--port 8501]    # Streamlit on 0.0.0.0, on the local data/ (no copy: run `sync`)
 
 uv run pytest
 uv run ruff check src tests && uv run ruff format src tests
@@ -80,7 +83,7 @@ uv run ruff check src tests && uv run ruff format src tests
 | `ETF_HISTORY_SEC_USER_AGENT` | (empty) | `"Name email"` contact SEC requires; N-PORT download is skipped (error) without it |
 | `ETF_HISTORY_TELEGRAM_TOKEN` | (empty) | bot token from @BotFather (secret: only in the Pi's `.env`) |
 | `ETF_HISTORY_TELEGRAM_CHAT_ID` | (empty) | chat that gets the report (`telegram-chat-id` writes it); without token and id `notify` only logs |
-| `ETF_HISTORY_SYNC_FROM` | (empty) | rsync source of the collector's `data/` (`joao@raspberrypi.local:code/etf-history/data/`; the hostname, since the Pi's DHCP address can change); `dashboard` copies it first (`--no-sync` skips; a failed copy only warns) |
+| `ETF_HISTORY_SYNC_FROM` | (empty) | rsync source of the collector's `data/` (`joao@raspberrypi.local:code/etf-history/data/`; the hostname, since the Pi's DHCP address can change); `sync` copies it (`etf-history-sync.timer`) |
 
 ## Source: Dimensional daily CSV
 
@@ -239,9 +242,11 @@ uv run ruff check src tests && uv run ruff format src tests
   Python startup alone takes ~15 s there. The journal is volatile (Pi OS default, spares the SD card): read logs
   with `journalctl _SYSTEMD_USER_UNIT=etf-history-morning.service` (or `-catchup`; `journalctl --user` finds nothing). The Pi is
   now the collector: its `data/` is the source of truth; don't run `catch-up` elsewhere and copy over it. The
-  dashboard machine sets `ETF_HISTORY_SYNC_FROM`, so `etf-history dashboard` pulls the Pi's `data/` (rsync, no
-  `--delete`, `*-shm` excluded) before starting. Reading the Pi's SQLite over the network (sshfs/NFS) is not an
-  option: WAL readers need the writer's shared memory.
+  dashboard machine sets `ETF_HISTORY_SYNC_FROM`, so `etf-history sync` pulls the Pi's `data/` into the local repo
+  (rsync, no `--delete`, `*-shm` excluded); `etf-history-sync.timer` runs it there at 09:30 and 21:30, 30 min after
+  the Pi's runs so the copy doesn't catch the database mid-write; `dashboard` only reads the local copy. That copy is
+  also the backup: `data/raw` is what can't be downloaded again (AVES daily). The Pi's `.env` is not copied.
+  Reading the Pi's SQLite over the network (sshfs/NFS) is not an option: WAL readers need the writer's shared memory.
 - Streamlit only hot-reloads the page scripts, not the `etf_history` modules they import (`data.py`, `db.py`…):
   restart the dashboard after changing them (`systemctl --user restart etf-history-dashboard` where it runs as a service),
   otherwise it fails with stale-module errors such as `has no attribute 'sidebar'`.

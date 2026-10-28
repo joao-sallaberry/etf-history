@@ -1,0 +1,12 @@
+[Unit]
+Description=etf-history: copy the collector's data after each collection run
+
+[Timer]
+# For the dashboard machine, not the Pi. 30 min after the Pi's runs (09:00 catch-up + report, 21:00 catch-up),
+# so the copy does not catch the database mid-write. Persistent: a run missed while this machine was off happens
+# when it comes back.
+OnCalendar=*-*-* 09,21:30:00 America/Sao_Paulo
+Persistent=true
+
+[Install]
+WantedBy=timers.target

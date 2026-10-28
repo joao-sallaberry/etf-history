@@ -12,7 +12,7 @@ class Settings:
     seeds_dir: Path
     funds: tuple[str, ...]
     sec_user_agent: str  # "Name email" contact SEC requires for N-PORT downloads; empty = N-PORT disabled
-    sync_from: str  # rsync source of data/ (the collector Pi) copied before the dashboard starts; empty = no sync
+    sync_from: str  # rsync source of data/ (the collector Pi) copied by `sync`; empty = no sync
     telegram_token: str = ""  # bot token from @BotFather; empty (or no chat id) = `notify` only logs the report
     telegram_chat_id: str = ""
 
