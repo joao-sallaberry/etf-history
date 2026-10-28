@@ -7,7 +7,6 @@ Description=etf-history: evening holdings download
 # is lost for AVES.
 OnCalendar=*-*-* 21:00:00 America/Sao_Paulo
 Persistent=true
-RandomizedDelaySec=10min
 
 [Install]
 WantedBy=timers.target
