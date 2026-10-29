@@ -152,7 +152,8 @@ uv run ruff check src tests && uv run ruff format src tests
 - Per company, local-share equivalents (rights excluded) on the window's first vs last day: **bought** = +5% or more
   or entry, **sold** = −5% or more or exit (`MIN_CHANGE`). "Both/All funds bought/sold": every compared fund did.
   **Possible split or reorganization**: every fund held it on both days and all factors are within 5% of each other
-  and > 1.5 or < 0.67 (NATU ×47.6); those leave the bought/sold sections. **Entries and exits**: any fund.
+  and > 1.5 or < 0.67 (NATU ×47.6); those leave the bought/sold sections. **Entered** and **Exited**: any fund,
+  one line per fund (`company · name (FUND)`). Section titles carry a count; buys/entries 🟢, sells/exits 🔴.
 - **Collection**: a fund with more than 3 weekdays since its last day; a catch-up that started and never finished,
   failed (`meta.catchup_finished` = `{"at", "errors", "failed"}` written by `catch-up`, `catchup_started` at its
   start) or has not finished in 26 h. Skipped with `--as-of`.

@@ -41,12 +41,13 @@ class Report:
     bought: dict[tuple, str] = field(default_factory=dict)
     sold: dict[tuple, str] = field(default_factory=dict)
     events: dict[tuple, str] = field(default_factory=dict)
-    moves: dict[tuple, str] = field(default_factory=dict)  # entries and exits, any fund
+    entries: dict[tuple, str] = field(default_factory=dict)  # any fund
+    exits: dict[tuple, str] = field(default_factory=dict)
     health: list[str] = field(default_factory=list)
     seeds: list[str] = field(default_factory=list)
 
     def empty(self) -> bool:
-        return not (self.bought or self.sold or self.events or self.moves or self.health or self.seeds)
+        return not (self.bought or self.sold or self.events or self.entries or self.exits or self.health or self.seeds)
 
 
 def _days(conn: sqlite3.Connection, fund: str) -> list[date]:
@@ -141,7 +142,7 @@ def trades(conn: sqlite3.Connection, funds: list[str], as_of: date) -> Report:
         kinds = {f: change(*p) for f, p in pairs.items()}
         for f, kind in kinds.items():
             if kind in ("entry", "exit"):
-                report.moves[(kind, f, company)] = f"{label}: {f} {'entered' if kind == 'entry' else 'exited'}"
+                (report.entries if kind == "entry" else report.exits)[(kind, f, company)] = f"{label} ({f})"
         if len(compared) < 2:
             continue
         if _event(list(pairs.values())):
@@ -215,7 +216,8 @@ def build(conn: sqlite3.Connection, settings: config.Settings, refs: Refs, as_of
         (report.bought, previous.bought),
         (report.sold, previous.sold),
         (report.events, previous.events),
-        (report.moves, previous.moves),
+        (report.entries, previous.entries),
+        (report.exits, previous.exits),
     ]:
         new = {k: f"🆕 {v}" for k, v in section.items() if k not in old}
         rest = {k: v for k, v in section.items() if k in old}
@@ -231,14 +233,16 @@ def render(report: Report) -> str:
     if report.sparse:
         parts.append(f"Not enough data in the window: {', '.join(report.sparse)}")
     every = "Both" if len(report.windows) == 2 else "All funds"
+    # Green/red: buys and entries/sells and exits.
     for title, items in [
-        (f"{every} bought", list(report.bought.values())),
-        (f"{every} sold", list(report.sold.values())),
+        (f"🟢 {every} bought", list(report.bought.values())),
+        (f"🔴 {every} sold", list(report.sold.values())),
         ("Possible split or reorganization (same factor in every fund)", list(report.events.values())),
-        ("Entries and exits", list(report.moves.values())),
+        ("🟢 Entered", list(report.entries.values())),
+        ("🔴 Exited", list(report.exits.values())),
         ("Collection", report.health),
         ("Not in seeds/securities.csv (dropped)", report.seeds),
     ]:
         if items:
-            parts.append(f"\n{title}\n" + "\n".join(f"• {i}" for i in items))
+            parts.append(f"\n{title} ({len(items)})\n" + "\n".join(f"• {i}" for i in items))
     return "\n".join(parts)

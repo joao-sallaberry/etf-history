@@ -53,7 +53,8 @@ def test_both_bought_sold_and_threshold(conn):
     assert "DFEV +10.0%, AVES +20.0%" in r.bought[("bought", "PETR")]
     assert "DFEV new, AVES new" in r.bought[("bought", "TIMS")]
     # ITUB: only DFEV holds it → not joint; entries listed per fund
-    assert ("entry", "DFEV", "TIMS") in r.moves and ("entry", "AVES", "TIMS") in r.moves
+    assert ("entry", "DFEV", "TIMS") in r.entries and ("entry", "AVES", "TIMS") in r.entries
+    assert r.entries[("entry", "DFEV", "TIMS")] == "TIMS · TIMS SA (DFEV)" and not r.exits
 
 
 def test_same_factor_in_every_fund_is_a_corporate_event(conn):
