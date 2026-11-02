@@ -2,7 +2,8 @@
 Description=etf-history: morning download and report
 
 [Timer]
-# Same job as etf-history-catchup.timer (which runs it in the evening), plus `notify` afterwards.
+# Same job as etf-history-catchup.timer (which runs it in the evening), plus `notify` afterwards
+# (which sends nothing on weekends; catch-up still runs every day).
 OnCalendar=*-*-* 09:00:00 America/Sao_Paulo
 Persistent=true
 

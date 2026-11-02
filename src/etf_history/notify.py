@@ -1,6 +1,6 @@
 """Morning report: what every fund bought or sold over the last 30 days, entries/exits, collection health and
-unseeded Brazilian securities. Stateless: the report is rebuilt each morning, and items not in the report of the
-previous day are marked new.
+unseeded Brazilian securities. Sent on weekday mornings only. Stateless: the report is rebuilt each morning, and
+items not in the report of the previous weekday are marked new.
 
 Collection code: standard library only (runs on the Pi 1).
 """
@@ -203,13 +203,27 @@ def unseeded(conn: sqlite3.Connection, funds: list[str], data_dir: Path, refs: R
     return lines
 
 
+def is_report_day(day: date) -> bool:
+    """Reports go out on weekday mornings only."""
+    return day.weekday() < 5
+
+
+def previous_morning(as_of: date) -> date:
+    """The last report morning before `as_of` (Friday for a Monday), which `new` items are computed against."""
+    day = as_of - timedelta(days=1)
+    while not is_report_day(day):
+        day -= timedelta(days=1)
+    return day
+
+
 def build(conn: sqlite3.Connection, settings: config.Settings, refs: Refs, as_of: date | None = None) -> Report:
-    """The report for the morning of `as_of` (default today); `new` items are computed against the day before."""
+    """The report for the morning of `as_of` (default today); `new` items are computed against the previous report
+    morning (`previous_morning`)."""
     simulated = as_of is not None
     as_of = as_of or today()
     funds = list(settings.funds)
     report = trades(conn, funds, as_of)
-    previous = trades(conn, funds, as_of - timedelta(days=1))
+    previous = trades(conn, funds, previous_morning(as_of))
     report.health = health(conn, funds, as_of, check_catchup=not simulated)
     report.seeds = unseeded(conn, funds, settings.data_dir, refs, as_of)
     for section, old in [

@@ -190,7 +190,10 @@ def notify(
     ] = None,
 ):
     """Morning report: what every fund bought or sold in the last 30 days, entries/exits, collection health and
-    unseeded Brazilian securities. Nothing is sent when there is nothing to report."""
+    unseeded Brazilian securities. Nothing is sent on weekends or when there is nothing to report."""
+    if not (dry_run or as_of) and not notify_.is_report_day(today()):
+        log.info("weekend: no report")
+        return
     settings, conn = _setup()
     r = refs.load(settings.seeds_dir)
     report = notify_.build(conn, settings, r, date.fromisoformat(as_of) if as_of else None)

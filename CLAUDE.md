@@ -59,7 +59,7 @@ uv run etf-history fetch-daily [--day YYYY-MM-DD]   # one day, or the missing da
 uv run etf-history catch-up                   # daily job: every missing day
 uv run etf-history backfill-history           # AVES past: Wayback captures + N-PORT filings; resumable (~3 min)
 uv run etf-history status [--gaps]            # days per fund, date range, missing days
-uv run etf-history notify [--dry-run]         # morning report to Telegram (see Notifications); --as-of YYYY-MM-DD
+uv run etf-history notify [--dry-run]         # weekday morning report to Telegram (see Notifications); --as-of YYYY-MM-DD
                                               # simulates a day and only prints
 uv run etf-history telegram-chat-id           # after messaging the bot: save the chat id in .env, send a test
 uv run etf-history seed                       # re-parse raw files if seeds/ changed (download commands do it too)
@@ -143,9 +143,11 @@ uv run ruff check src tests && uv run ruff format src tests
 
 - Sent to Telegram (plain text, no markup to escape; split at 4096 characters) by the morning run on the Pi.
   A send failure logs the report and exits 1.
-- One plain-text message per morning, only when there is something to report; rebuilt from the database every
-  time (no state), so an item repeats every morning while it is in the window. Items that were not in the report
-  of the day before (same rules, `as_of − 1`) get 🆕 and come first in their section.
+- One plain-text message per **weekday** morning (Saturday/Sunday: `notify` logs `weekend: no report` and exits;
+  the morning catch-up still runs), only when there is something to report; rebuilt from the database every time
+  (no state), so an item repeats every morning while it is in the window. Items that were not in the report of the
+  previous report morning (same rules, `notify.previous_morning`: the day before, Friday for a Monday) get 🆕 and
+  come first in their section. `--dry-run`/`--as-of` print on any day.
 - Window: each fund's last 30 days, from its first day ≥ last day − 30 to its last day up to the morning (Dimensional
   lags 1–2 days, Avantis 1). A fund with fewer than 2 days there is left out ("not enough data"); joint sections
   need 2+ funds compared.

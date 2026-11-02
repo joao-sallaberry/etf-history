@@ -84,16 +84,23 @@ def test_window_uses_the_first_day_inside_it():
     assert notify.window(days, date(2026, 8, 10)) is None  # only 07-29 in the 30 days ending there
 
 
+def test_previous_morning_skips_weekends():
+    assert DAY.weekday() == 0
+    assert notify.previous_morning(DAY) == DAY - timedelta(days=3)  # Monday → Friday
+    assert notify.previous_morning(DAY + timedelta(days=1)) == DAY
+    assert not notify.is_report_day(DAY - timedelta(days=1))
+
+
 def test_new_items_against_the_previous_morning(conn, tmp_path):
     put(conn, "DFEV", DAY - timedelta(days=10), {"PETR": 100, "VALE": 100})
     put(conn, "AVES", DAY - timedelta(days=10), {"PETR": 100, "VALE": 100})
-    put(conn, "DFEV", DAY - timedelta(days=1), {"PETR": 120, "VALE": 100})
-    put(conn, "AVES", DAY - timedelta(days=1), {"PETR": 120, "VALE": 100})
+    put(conn, "DFEV", DAY - timedelta(days=3), {"PETR": 120, "VALE": 100})  # Friday, the previous report morning
+    put(conn, "AVES", DAY - timedelta(days=3), {"PETR": 120, "VALE": 100})
     put(conn, "DFEV", DAY, {"PETR": 120, "VALE": 120})
     put(conn, "AVES", DAY, {"PETR": 120, "VALE": 120})
     r = notify.build(conn, settings(tmp_path), Refs(), DAY)
     assert list(r.bought.values())[0].startswith("🆕 VALE")  # new first
-    assert not list(r.bought.values())[1].startswith("🆕")  # PETR was already there yesterday
+    assert not list(r.bought.values())[1].startswith("🆕")  # PETR was already there on Friday
     text = notify.render(r)
     assert "Both bought" in text and "🆕 VALE" in text
 
