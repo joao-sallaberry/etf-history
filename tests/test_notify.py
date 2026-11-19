@@ -99,10 +99,20 @@ def test_new_items_against_the_previous_morning(conn, tmp_path):
     put(conn, "DFEV", DAY, {"PETR": 120, "VALE": 120})
     put(conn, "AVES", DAY, {"PETR": 120, "VALE": 120})
     r = notify.build(conn, settings(tmp_path), Refs(), DAY)
-    assert list(r.bought.values())[0].startswith("🆕 VALE")  # new first
-    assert not list(r.bought.values())[1].startswith("🆕")  # PETR was already there on Friday
+    assert r.new == {("bought", "VALE")}  # PETR was already there on Friday
     text = notify.render(r)
-    assert "Both bought" in text and "🆕 VALE" in text
+    assert "Both bought (2, 1 new)\n• 🆕 VALE · VALE SA: DFEV +20.0%, AVES +20.0%\n• Recent: PETR" in text
+
+
+def test_repeated_entries_fold_into_one_line_per_section():
+    r = notify.Report(DAY)
+    for fund, company in [("DFEV", "MYPK"), ("DFEV", "PFRM"), ("AVES", "SANB"), ("DFEV", "VIVA")]:
+        r.entries[("entry", fund, company)] = f"{company} · {company} SA ({fund})"
+    r.new = {("entry", "DFEV", "VIVA")}
+    text = notify.render(r)
+    assert "Entered (4, 1 new)\n• 🆕 VIVA · VIVA SA (DFEV)\n• Recent: MYPK, PFRM (DFEV) · SANB (AVES)" in text
+    r.new = set()
+    assert "Entered (4)\n• Recent:" in notify.render(r)
 
 
 def test_health(conn):

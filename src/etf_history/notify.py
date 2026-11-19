@@ -1,6 +1,7 @@
 """Morning report: what every fund bought or sold over the last 30 days, entries/exits, collection health and
 unseeded Brazilian securities. Sent on weekday mornings only. Stateless: the report is rebuilt each morning, and
-items not in the report of the previous weekday are marked new.
+items not in the report of the previous weekday are marked new and listed in full; the rest fold into one
+"Recent" line per section.
 
 Collection code: standard library only (runs on the Pi 1).
 """
@@ -43,6 +44,7 @@ class Report:
     events: dict[tuple, str] = field(default_factory=dict)
     entries: dict[tuple, str] = field(default_factory=dict)  # any fund
     exits: dict[tuple, str] = field(default_factory=dict)
+    new: set[tuple] = field(default_factory=set)  # keys not in the previous morning's report (build)
     health: list[str] = field(default_factory=list)
     seeds: list[str] = field(default_factory=list)
 
@@ -233,11 +235,28 @@ def build(conn: sqlite3.Connection, settings: config.Settings, refs: Refs, as_of
         (report.entries, previous.entries),
         (report.exits, previous.exits),
     ]:
-        new = {k: f"🆕 {v}" for k, v in section.items() if k not in old}
-        rest = {k: v for k, v in section.items() if k in old}
-        section.clear()
-        section.update(new | rest)
+        report.new |= {k for k in section if k not in old}
     return report
+
+
+def _repeated(keys: list[tuple]) -> str:
+    """Short form of items already in the previous report: company codes, grouped by fund for entries/exits
+    (keys `(kind, fund, company)`; joint sections have `(kind, company)`)."""
+    if len(keys[0]) == 2:
+        return ", ".join(k[1] for k in keys)
+    by_fund: dict[str, list[str]] = {}
+    for _, fund, company in keys:
+        by_fund.setdefault(fund, []).append(company)
+    return " · ".join(f"{', '.join(companies)} ({fund})" for fund, companies in by_fund.items())
+
+
+def _section(report: Report, items: dict[tuple, str]) -> list[str]:
+    """New items in full (🆕), then the repeated ones on a single line."""
+    lines = [f"🆕 {v}" for k, v in items.items() if k in report.new]
+    old = [k for k in items if k not in report.new]
+    if old:
+        lines.append(f"Recent: {_repeated(old)}")
+    return lines
 
 
 def render(report: Report) -> str:
@@ -249,14 +268,18 @@ def render(report: Report) -> str:
     every = "Both" if len(report.windows) == 2 else "All funds"
     # Green/red: buys and entries/sells and exits.
     for title, items in [
-        (f"🟢 {every} bought", list(report.bought.values())),
-        (f"🔴 {every} sold", list(report.sold.values())),
-        ("Possible split or reorganization (same factor in every fund)", list(report.events.values())),
-        ("🟢 Entered", list(report.entries.values())),
-        ("🔴 Exited", list(report.exits.values())),
+        (f"🟢 {every} bought", report.bought),
+        (f"🔴 {every} sold", report.sold),
+        ("Possible split or reorganization (same factor in every fund)", report.events),
+        ("🟢 Entered", report.entries),
+        ("🔴 Exited", report.exits),
         ("Collection", report.health),
         ("Not in seeds/securities.csv (dropped)", report.seeds),
     ]:
-        if items:
-            parts.append(f"\n{title} ({len(items)})\n" + "\n".join(f"• {i}" for i in items))
+        if not items:
+            continue
+        lines = _section(report, items) if isinstance(items, dict) else items
+        new = sum(k in report.new for k in items) if isinstance(items, dict) else 0
+        count = f"{len(items)}, {new} new" if new and new < len(items) else str(len(items))
+        parts.append(f"\n{title} ({count})\n" + "\n".join(f"• {i}" for i in lines))
     return "\n".join(parts)

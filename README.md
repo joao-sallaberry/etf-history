@@ -117,7 +117,8 @@ systemctl --user list-timers      # next run
 On weekdays, the 09:00 run sends a Telegram message when there is something to report: companies every fund bought (+5% or
 more, or a new position) or sold over its last 30 days, splits seen in every fund, entries and exits, collection
 problems and Brazilian securities missing from `seeds/securities.csv`. Items new since the previous weekday morning are
-marked 🆕. To set it up on the collector:
+marked 🆕 and shown in full; the ones already reported are listed by company code on a single "Recent"
+line. To set it up on the collector:
 
 1. In Telegram, talk to @BotFather, `/newbot`, and copy the token.
 2. Put it in the collector's `.env` (it is a secret; don't commit it):

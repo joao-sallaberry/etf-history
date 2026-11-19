@@ -147,7 +147,9 @@ uv run ruff check src tests && uv run ruff format src tests
   the morning catch-up still runs), only when there is something to report; rebuilt from the database every time
   (no state), so an item repeats every morning while it is in the window. Items that were not in the report of the
   previous report morning (same rules, `notify.previous_morning`: the day before, Friday for a Monday) get 🆕 and
-  come first in their section. `--dry-run`/`--as-of` print on any day.
+  their full line; the rest fold into one `Recent: …` line at the end of the section (company codes,
+  grouped by fund for entries/exits), and the title count says how many are new (`(5, 1 new)`). `--dry-run`/`--as-of`
+  print on any day.
 - Window: each fund's last 30 days, from its first day ≥ last day − 30 to its last day up to the morning (Dimensional
   lags 1–2 days, Avantis 1). A fund with fewer than 2 days there is left out ("not enough data"); joint sections
   need 2+ funds compared.
